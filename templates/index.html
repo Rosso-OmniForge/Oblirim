@@ -46,6 +46,16 @@
             letter-spacing: 2px;
         }
 
+        .warning-banner {
+            font-size: 8px;
+            color: var(--red);
+            text-align: center;
+            margin-top: 2px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
         /* Main content area */
         .main-content {
             display: flex;
@@ -53,9 +63,9 @@
             height: calc(100vh - 80px);
         }
 
-        /* Face component - 33% */
-        .face-panel {
-            flex: 0 0 33%;
+        /* System specs - 50% */
+        .specs-panel {
+            flex: 0 0 50%;
             background: var(--bg-panel);
             border: 1px solid var(--green);
             padding: 10px;
@@ -63,32 +73,28 @@
             flex-direction: column;
         }
 
-        #ascii-face {
-            font-size: 8px;
-            line-height: 1.1;
-            white-space: pre;
-            text-align: center;
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .emotion-display {
-            font-size: 10px;
-            text-align: center;
-            color: var(--cyan);
-            margin-top: 5px;
-            padding: 3px;
-            border-top: 1px solid var(--gray);
-        }
-
-        /* System specs - 66% */
-        .specs-panel {
-            flex: 0 0 66%;
+        /* Ethernet panel - 50% */
+        .eth-panel {
+            flex: 0 0 50%;
             background: var(--bg-panel);
-            border: 1px solid var(--green);
+            border: 1px solid var(--cyan);
             padding: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            font-size: 10px;
+            font-weight: bold;
+            color: var(--green);
+            border-bottom: 1px solid var(--gray);
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+        }
+
+        .eth-panel .panel-header {
+            color: var(--cyan);
         }
 
         .spec-grid {
@@ -196,6 +202,343 @@
             margin-top: 5px;
         }
 
+        /* Ethernet tab specific styles */
+        .eth-status {
+            margin-bottom: 10px;
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+            padding: 5px;
+            background: var(--bg-panel);
+            border: 1px solid var(--green);
+        }
+
+        .status-label {
+            color: var(--cyan);
+            font-weight: bold;
+        }
+
+        .status-value {
+            color: var(--green);
+            font-weight: bold;
+        }
+
+        .status-value.disconnected {
+            color: var(--red);
+        }
+
+        .network-info {
+            padding: 5px;
+            background: var(--bg-panel);
+            border: 1px solid var(--gray);
+            margin-bottom: 5px;
+            font-size: 10px;
+        }
+
+        .network-info div {
+            margin: 2px 0;
+        }
+
+        .progress-container {
+            padding: 5px;
+            background: var(--bg-panel);
+            border: 1px solid var(--yellow);
+            margin-bottom: 10px;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 9px;
+            color: var(--cyan);
+        }
+
+        #current-phase {
+            color: var(--yellow);
+            font-weight: bold;
+        }
+
+        .progress-bar-container {
+            position: relative;
+            margin: 5px 0;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 12px;
+            background: var(--bg);
+            border: 1px solid var(--gray);
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--green), var(--cyan));
+            transition: width 0.3s ease;
+        }
+
+        .progress-percentage {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 8px;
+            color: var(--cyan);
+            font-weight: bold;
+            line-height: 12px;
+            text-shadow: 0 0 3px var(--bg);
+        }
+
+        .progress-message {
+            font-size: 8px;
+            color: var(--gray);
+            margin: 3px 0;
+            text-align: center;
+        }
+
+        /* Phase Indicators */
+        .phase-indicators {
+            display: flex;
+            justify-content: space-around;
+            margin: 10px 0;
+            padding: 5px 0;
+            border-top: 1px solid var(--gray);
+            border-bottom: 1px solid var(--gray);
+        }
+
+        .phase-indicator {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .phase-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--gray);
+            border: 1px solid var(--gray);
+        }
+
+        .phase-indicator.active .phase-dot {
+            background: var(--yellow);
+            border-color: var(--yellow);
+            box-shadow: 0 0 5px var(--yellow);
+            animation: pulse 1s infinite;
+        }
+
+        .phase-indicator.completed .phase-dot {
+            background: var(--green);
+            border-color: var(--green);
+        }
+
+        .phase-name {
+            font-size: 7px;
+            color: var(--gray);
+        }
+
+        .phase-indicator.active .phase-name {
+            color: var(--yellow);
+            font-weight: bold;
+        }
+
+        .phase-indicator.completed .phase-name {
+            color: var(--green);
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        /* Blocked Warning */
+        .blocked-warning {
+            padding: 8px;
+            background: var(--bg);
+            border: 2px solid var(--red);
+            margin: 10px 0;
+        }
+
+        .blocked-header {
+            text-align: center;
+            color: var(--red);
+            font-weight: bold;
+            font-size: 10px;
+            margin-bottom: 5px;
+            animation: blink 1s infinite;
+        }
+
+        .blocked-details {
+            font-size: 8px;
+            color: var(--yellow);
+        }
+
+        .blocked-details div {
+            margin: 2px 0;
+        }
+
+        .eth-controls {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+
+        .eth-controls .btn {
+            flex: 1;
+        }
+
+        .scan-details {
+            font-size: 9px;
+            color: var(--yellow);
+            text-align: center;
+        }
+
+        /* Dashboard Ethernet Panel Styles */
+        .eth-quick-status {
+            font-size: 9px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .eth-connection-state {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px;
+            background: var(--bg);
+            border: 1px solid var(--cyan);
+        }
+
+        .eth-connection-state .value {
+            font-weight: bold;
+            color: var(--red);
+        }
+
+        .eth-connection-state .value.connected {
+            color: var(--green);
+        }
+
+        .eth-network-info {
+            padding: 5px;
+            background: var(--bg);
+            border: 1px solid var(--gray);
+            font-size: 8px;
+        }
+
+        .eth-network-info div {
+            display: flex;
+            justify-content: space-between;
+            margin: 2px 0;
+        }
+
+        .eth-network-info .label {
+            color: var(--cyan);
+        }
+
+        .eth-scan-status {
+            padding: 5px;
+            background: var(--bg);
+            border: 1px solid var(--yellow);
+        }
+
+        .scan-state {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+
+        .scan-state .value {
+            font-weight: bold;
+            color: var(--yellow);
+        }
+
+        .mini-progress {
+            margin: 5px 0;
+        }
+
+        .mini-progress-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--bg);
+            border: 1px solid var(--gray);
+            overflow: hidden;
+            margin: 3px 0;
+        }
+
+        .mini-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--green), var(--cyan));
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .mini-progress-text {
+            font-size: 8px;
+            color: var(--cyan);
+            text-align: center;
+        }
+
+        .scan-summary {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 5px;
+            padding-top: 5px;
+            border-top: 1px solid var(--gray);
+        }
+
+        .scan-summary div {
+            text-align: center;
+        }
+
+        .stat-label {
+            color: var(--gray);
+            font-size: 7px;
+            display: block;
+        }
+
+        .vuln-count {
+            color: var(--red);
+            font-weight: bold;
+        }
+
+        .eth-blocked-notice {
+            padding: 8px;
+            background: var(--bg);
+            border: 2px solid var(--red);
+            text-align: center;
+            animation: blink 1s infinite;
+        }
+
+        .blocked-icon {
+            font-size: 16px;
+            display: block;
+        }
+
+        .blocked-text {
+            color: var(--red);
+            font-weight: bold;
+            font-size: 9px;
+            display: block;
+            margin: 3px 0;
+        }
+
+        .blocked-time {
+            color: var(--yellow);
+            font-size: 7px;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.5; }
+        }
+
         /* Performance optimizations */
         * {
             -webkit-transform: translateZ(0);
@@ -219,19 +562,15 @@
 <body>
     <div class="header">
         <h1>OBLIRIM PWN MASTER</h1>
+        <div class="warning-banner">
+            ⚠️ FOR AUTHORIZED TESTING ONLY ⚠️
+        </div>
     </div>
 
     <div class="main-content">
-        <!-- Face Panel (33%) -->
-        <div class="face-panel">
-            <div id="ascii-face">Loading...</div>
-            <div class="emotion-display">
-                State: <span id="emotion-status">Booting</span>
-            </div>
-        </div>
-
-        <!-- System Specs Panel (66%) -->
+        <!-- Left Column: System Specs (50%) -->
         <div class="specs-panel">
+            <div class="panel-header">SYSTEM STATS</div>
             <div class="spec-grid">
                 <div class="spec-item">
                     <span class="spec-label">Model:</span>
@@ -283,24 +622,131 @@
                 </div>
             </div>
         </div>
+
+        <!-- Right Column: Ethernet Status (50%) -->
+        <div class="eth-panel">
+            <div class="panel-header">ETHERNET STATUS</div>
+            <div class="eth-quick-status">
+                <div class="eth-connection-state">
+                    <span class="label">Connection:</span>
+                    <span class="value" id="dash-eth-status">DISCONNECTED</span>
+                </div>
+                <div class="eth-network-info" id="dash-network-info" style="display: none;">
+                    <div><span class="label">IP:</span> <span id="dash-eth-ip">N/A</span></div>
+                    <div><span class="label">Gateway:</span> <span id="dash-eth-gateway">N/A</span></div>
+                    <div><span class="label">Networks:</span> <span id="dash-networks-scanned">0</span></div>
+                </div>
+                <div class="eth-scan-status" id="dash-scan-status">
+                    <div class="scan-state">
+                        <span class="label">Scan Status:</span>
+                        <span class="value" id="dash-scan-state">Idle</span>
+                    </div>
+                    <div class="mini-progress" id="dash-progress-container" style="display: none;">
+                        <div class="mini-progress-bar">
+                            <div class="mini-progress-fill" id="dash-progress-fill"></div>
+                        </div>
+                        <div class="mini-progress-text" id="dash-progress-text">0%</div>
+                    </div>
+                    <div class="scan-summary" id="dash-scan-summary">
+                        <div><span class="stat-label">Hosts:</span> <span id="dash-hosts">0</span></div>
+                        <div><span class="stat-label">Ports:</span> <span id="dash-ports">0</span></div>
+                        <div><span class="stat-label">Vulns:</span> <span id="dash-vulns" class="vuln-count">0</span></div>
+                    </div>
+                </div>
+                <div class="eth-blocked-notice" id="dash-blocked-notice" style="display: none;">
+                    <span class="blocked-icon">🚫</span>
+                    <span class="blocked-text">Network Blocking Detected!</span>
+                    <div class="blocked-time" id="dash-blocked-time"></div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Secondary content for other tabs -->
     <div class="secondary-panels">
-        <div class="tab-content" id="scripts">
-            <button class="btn" id="run-script-btn">Run Script</button>
-            <div class="output" id="script-output"></div>
+        <div class="tab-content" id="eth">
+            <div class="eth-status">
+                <div class="status-bar">
+                    <span class="status-label">Ethernet Status:</span>
+                    <span class="status-value" id="eth-status">Checking...</span>
+                </div>
+                <div class="network-info" id="network-info" style="display: none;">
+                    <div>IP: <span id="eth-ip">N/A</span></div>
+                    <div>Gateway: <span id="eth-gateway">N/A</span></div>
+                    <div>Networks Scanned: <span id="networks-scanned">0</span></div>
+                </div>
+                
+                <!-- Enhanced Progress Display -->
+                <div class="progress-container" id="scan-progress" style="display: none;">
+                    <div class="progress-header">
+                        <span>Current Phase:</span>
+                        <span id="current-phase">Initializing...</span>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+                        </div>
+                        <div class="progress-percentage" id="progress-text">0%</div>
+                    </div>
+                    <div class="progress-message" id="progress-message">Preparing scan...</div>
+                    
+                    <!-- Phase Indicators -->
+                    <div class="phase-indicators">
+                        <div class="phase-indicator" id="phase-1">
+                            <div class="phase-dot"></div>
+                            <div class="phase-name">Detection</div>
+                        </div>
+                        <div class="phase-indicator" id="phase-2">
+                            <div class="phase-dot"></div>
+                            <div class="phase-name">Discovery</div>
+                        </div>
+                        <div class="phase-indicator" id="phase-3">
+                            <div class="phase-dot"></div>
+                            <div class="phase-name">Enumeration</div>
+                        </div>
+                        <div class="phase-indicator" id="phase-4">
+                            <div class="phase-dot"></div>
+                            <div class="phase-name">Vulnerabilities</div>
+                        </div>
+                    </div>
+                    
+                    <div class="scan-details">
+                        Devices Found: <span id="devices-found">0</span> | 
+                        Open Ports: <span id="open-ports">0</span> | 
+                        Vulnerabilities: <span id="vulnerabilities">0</span>
+                    </div>
+                </div>
+                
+                <!-- Blocked Warning -->
+                <div class="blocked-warning" id="blocked-warning" style="display: none;">
+                    <div class="blocked-header">⚠️ NETWORK BLOCKING DETECTED ⚠️</div>
+                    <div class="blocked-details">
+                        <div>Blocked at: <span id="blocked-timestamp">N/A</span></div>
+                        <div>Last successful: <span id="last-successful">N/A</span></div>
+                        <div>Blocked operations: <span id="blocked-operations">0</span></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="eth-controls">
+                <button class="btn" id="start-eth-scan">Start ETH Scan</button>
+                <button class="btn" id="stop-eth-scan" style="display: none;">Stop Scan</button>
+                <button class="btn" id="refresh-eth-logs">Refresh Logs</button>
+            </div>
+            
+            <div class="output" id="eth-output"></div>
         </div>
         
-        <div class="tab-content" id="logs">
-            <button class="btn" id="refresh-logs-btn">Refresh Logs</button>
-            <div class="output" id="log-display"></div>
+        <div class="tab-content" id="wlan">
+            <p>Wireless Tools</p>
+            <button class="btn">Start WLAN Scan</button>
+            <div class="output" id="wlan-output"></div>
         </div>
         
-        <div class="tab-content" id="tools">
-            <p>Network Tools</p>
-            <button class="btn">Ping Test</button>
-            <button class="btn">Port Scan</button>
+        <div class="tab-content" id="blt">
+            <p>Bluetooth Tools</p>
+            <button class="btn">Start BLT Scan</button>
+            <div class="output" id="blt-output"></div>
         </div>
         
         <div class="tab-content" id="config">
@@ -312,16 +758,15 @@
     <!-- Bottom tabs -->
     <div class="tabs">
         <div class="tab active" data-target="main">DASH</div>
-        <div class="tab" data-target="scripts">SCRIPTS</div>
-        <div class="tab" data-target="logs">LOGS</div>
-        <div class="tab" data-target="tools">TOOLS</div>
+        <div class="tab" data-target="eth">ETH</div>
+        <div class="tab" data-target="wlan">WLAN</div>
+        <div class="tab" data-target="blt">BLT</div>
         <div class="tab" data-target="config">CONFIG</div>
     </div>
 
     <script>
         const socket = io();
-        let currentEmotion = 'neutral';
-
+        
         // Tab switching
         document.querySelectorAll('.tab').forEach(tab => {
             tab.addEventListener('click', () => {
@@ -380,42 +825,304 @@
             updateStatusIndicators(data);
         });
 
-        socket.on('face_update', function(data) {
-            document.getElementById('ascii-face').textContent = data.face;
-            document.getElementById('emotion-status').textContent = data.emotion;
-            currentEmotion = data.emotion;
+        socket.on('eth_log_data', function(data) {
+            document.getElementById('eth-output').textContent = data;
         });
 
-        socket.on('script_output', function(data) {
-            const output = data.output || '';
-            const error = data.error || '';
-            document.getElementById('script-output').innerHTML = 
-                (output ? `<div>${output}</div>` : '') + 
-                (error ? `<div style="color: var(--red)">${error}</div>` : '');
+        socket.on('eth_progress', function(data) {
+            updateEthProgress(data);
         });
 
-        socket.on('log_data', function(data) {
-            document.getElementById('log-display').textContent = data;
+        socket.on('eth_scan_started', function(data) {
+            if (data.status === 'started') {
+                document.getElementById('start-eth-scan').textContent = 'Scan Running...';
+                document.getElementById('start-eth-scan').disabled = true;
+                document.getElementById('start-eth-scan').style.display = 'none';
+                document.getElementById('stop-eth-scan').style.display = 'inline-block';
+                document.getElementById('scan-progress').style.display = 'block';
+                document.getElementById('dash-scan-state').textContent = 'Starting...';
+            } else if (data.status === 'error') {
+                alert('Scan failed: ' + data.message);
+                document.getElementById('start-eth-scan').disabled = false;
+            } else if (data.status === 'auto') {
+                // Auto-triggered scan
+                document.getElementById('scan-progress').style.display = 'block';
+                document.getElementById('dash-scan-state').textContent = 'Auto-Scanning...';
+                console.log('Auto-scan triggered on Ethernet connection');
+            }
+        });
+
+        socket.on('eth_scan_stopped', function(data) {
+            document.getElementById('start-eth-scan').textContent = 'Start ETH Scan';
+            document.getElementById('start-eth-scan').disabled = false;
+            document.getElementById('start-eth-scan').style.display = 'inline-block';
+            document.getElementById('stop-eth-scan').style.display = 'none';
+            document.getElementById('dash-scan-state').textContent = 'Stopped';
+        });
+
+        socket.on('eth_connection_change', function(data) {
+            console.log('Ethernet connection changed:', data);
+            if (data.connected) {
+                console.log('Ethernet connected - auto-scan will trigger');
+                hideBlockedNotice();
+            } else {
+                console.log('Ethernet disconnected');
+                document.getElementById('dash-scan-state').textContent = 'Disconnected';
+            }
+            updateEthStatus();
+        });
+
+        socket.on('network_blocked', function(data) {
+            showBlockedNotice(data.message || 'Network blocking detected');
+            const blockedOps = document.getElementById('blocked-operations');
+            if (blockedOps && data.count) {
+                blockedOps.textContent = data.count;
+            }
         });
 
         socket.on('connect', () => {
             console.log('Connected to server');
-            socket.emit('request_face_update');
         });
 
         // Button handlers
-        document.getElementById('run-script-btn')?.addEventListener('click', () => {
-            socket.emit('run_script', { script: 'example' });
+        document.getElementById('start-eth-scan')?.addEventListener('click', () => {
+            socket.emit('start_eth_scan');
+            document.getElementById('start-eth-scan').style.display = 'none';
+            document.getElementById('stop-eth-scan').style.display = 'inline-block';
+            hideBlockedNotice();
         });
 
-        document.getElementById('refresh-logs-btn')?.addEventListener('click', () => {
-            socket.emit('request_logs');
+        document.getElementById('stop-eth-scan')?.addEventListener('click', () => {
+            socket.emit('stop_eth_scan');
+            document.getElementById('start-eth-scan').style.display = 'inline-block';
+            document.getElementById('stop-eth-scan').style.display = 'none';
         });
 
-        // Request initial face update
+        document.getElementById('refresh-eth-logs')?.addEventListener('click', () => {
+            socket.emit('request_eth_logs');
+        });
+
+        // Ethernet progress update function
+        function updateEthProgress(data) {
+            const progressFill = document.getElementById('progress-fill');
+            const progressText = document.getElementById('progress-text');
+            const scanProgress = document.getElementById('scan-progress');
+            const currentPhase = document.getElementById('current-phase');
+            const progressMessage = document.getElementById('progress-message');
+            
+            // Dashboard mini progress
+            const dashProgressFill = document.getElementById('dash-progress-fill');
+            const dashProgressText = document.getElementById('dash-progress-text');
+            const dashProgressContainer = document.getElementById('dash-progress-container');
+            const dashScanState = document.getElementById('dash-scan-state');
+            
+            if (data.progress > 0) {
+                scanProgress.style.display = 'block';
+                progressFill.style.width = data.progress + '%';
+                progressText.textContent = data.progress + '%';
+                progressMessage.textContent = data.message || '';
+                
+                // Update dashboard
+                dashProgressContainer.style.display = 'block';
+                dashProgressFill.style.width = data.progress + '%';
+                dashProgressText.textContent = data.progress + '%';
+                dashScanState.textContent = 'Scanning...';
+                dashScanState.style.color = 'var(--yellow)';
+            }
+            
+            // Update phase
+            if (data.phase) {
+                currentPhase.textContent = data.phase.replace('phase', 'Phase ').replace('_', ' ');
+                
+                // Update phase indicators
+                const phaseNum = data.phase.match(/\d+/);
+                if (phaseNum) {
+                    const num = parseInt(phaseNum[0]);
+                    for (let i = 1; i <= 4; i++) {
+                        const indicator = document.getElementById('phase-' + i);
+                        if (i < num) {
+                            indicator.className = 'phase-indicator completed';
+                        } else if (i === num) {
+                            indicator.className = 'phase-indicator active';
+                        } else {
+                            indicator.className = 'phase-indicator';
+                        }
+                    }
+                }
+            }
+            
+            // Update statistics
+            if (data.data) {
+                if (data.data.hosts !== undefined) {
+                    document.getElementById('devices-found').textContent = data.data.hosts;
+                    document.getElementById('dash-hosts').textContent = data.data.hosts;
+                }
+                if (data.data.ports !== undefined) {
+                    document.getElementById('open-ports').textContent = data.data.ports;
+                    document.getElementById('dash-ports').textContent = data.data.ports;
+                }
+                if (data.data.vulnerabilities !== undefined) {
+                    document.getElementById('vulnerabilities').textContent = data.data.vulnerabilities;
+                    document.getElementById('dash-vulns').textContent = data.data.vulnerabilities;
+                }
+            }
+            
+            // Handle completion
+            if (data.phase === 'complete') {
+                document.getElementById('start-eth-scan').textContent = 'Start ETH Scan';
+                document.getElementById('start-eth-scan').disabled = false;
+                document.getElementById('stop-eth-scan').style.display = 'none';
+                
+                dashScanState.textContent = 'Complete';
+                dashScanState.style.color = 'var(--green)';
+                
+                // Mark all phases as completed
+                for (let i = 1; i <= 4; i++) {
+                    document.getElementById('phase-' + i).className = 'phase-indicator completed';
+                }
+            }
+            
+            // Handle errors or blocking
+            if (data.phase === 'error' || data.phase === 'blocked') {
+                document.getElementById('start-eth-scan').disabled = false;
+                document.getElementById('stop-eth-scan').style.display = 'none';
+                dashScanState.textContent = 'Error';
+                dashScanState.style.color = 'var(--red)';
+                
+                if (data.phase === 'blocked') {
+                    showBlockedNotice(data.message || 'Network blocking detected');
+                }
+            }
+        }
+
+        // Update Ethernet status
+        function updateEthStatus() {
+            const ethStatus = document.getElementById('eth-status');
+            const networkInfo = document.getElementById('network-info');
+            const ethIp = document.getElementById('eth-ip');
+            const ethGateway = document.getElementById('eth-gateway');
+            const networksScanned = document.getElementById('networks-scanned');
+            
+            // Dashboard elements
+            const dashEthStatus = document.getElementById('dash-eth-status');
+            const dashNetworkInfo = document.getElementById('dash-network-info');
+            const dashEthIp = document.getElementById('dash-eth-ip');
+            const dashEthGateway = document.getElementById('dash-eth-gateway');
+            const dashNetworksScanned = document.getElementById('dash-networks-scanned');
+            
+            // Check eth0 status from system data
+            const eth0Element = document.getElementById('eth0');
+            if (eth0Element) {
+                const isUp = eth0Element.textContent === 'Up';
+                if (isUp) {
+                    ethStatus.textContent = 'CONNECTED';
+                    ethStatus.className = 'status-value';
+                    networkInfo.style.display = 'block';
+                    
+                    // Dashboard
+                    dashEthStatus.textContent = 'CONNECTED';
+                    dashEthStatus.className = 'value connected';
+                    dashNetworkInfo.style.display = 'block';
+                    
+                    // Fetch actual network info
+                    fetch('/api/eth/status')
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.ip) {
+                                ethIp.textContent = data.ip;
+                                dashEthIp.textContent = data.ip;
+                            }
+                            if (data.gateway) {
+                                ethGateway.textContent = data.gateway;
+                                dashEthGateway.textContent = data.gateway;
+                            }
+                        })
+                        .catch(err => console.error('Error fetching eth status:', err));
+                    
+                    // Fetch network tally
+                    fetch('/api/network/tally')
+                        .then(response => response.json())
+                        .then(data => {
+                            const count = data.total_networks || 0;
+                            networksScanned.textContent = count;
+                            dashNetworksScanned.textContent = count;
+                        })
+                        .catch(() => {
+                            networksScanned.textContent = '0';
+                            dashNetworksScanned.textContent = '0';
+                        });
+                } else {
+                    ethStatus.textContent = 'DISCONNECTED';
+                    ethStatus.className = 'status-value disconnected';
+                    networkInfo.style.display = 'none';
+                    
+                    // Dashboard
+                    dashEthStatus.textContent = 'DISCONNECTED';
+                    dashEthStatus.className = 'value';
+                    dashNetworkInfo.style.display = 'none';
+                    
+                    // Show historical data on dashboard
+                    document.getElementById('dash-scan-state').textContent = 'Idle (No Connection)';
+                }
+            }
+        }
+
+        // Show blocked notice
+        function showBlockedNotice(message) {
+            const blockedWarning = document.getElementById('blocked-warning');
+            const dashBlockedNotice = document.getElementById('dash-blocked-notice');
+            const blockedTimestamp = document.getElementById('blocked-timestamp');
+            const dashBlockedTime = document.getElementById('dash-blocked-time');
+            
+            const now = new Date().toLocaleString();
+            
+            if (blockedWarning) {
+                blockedWarning.style.display = 'block';
+                if (blockedTimestamp) {
+                    blockedTimestamp.textContent = now;
+                }
+            }
+            
+            if (dashBlockedNotice) {
+                dashBlockedNotice.style.display = 'block';
+                if (dashBlockedTime) {
+                    dashBlockedTime.textContent = 'Blocked at: ' + now;
+                }
+            }
+            
+            console.error('Network blocking detected:', message);
+        }
+
+        // Hide blocked notice
+        function hideBlockedNotice() {
+            const blockedWarning = document.getElementById('blocked-warning');
+            const dashBlockedNotice = document.getElementById('dash-blocked-notice');
+            
+            if (blockedWarning) blockedWarning.style.display = 'none';
+            if (dashBlockedNotice) dashBlockedNotice.style.display = 'none';
+        }
+
+        // Update Ethernet status when system data updates
+        const originalUpdateData = socket.on('update_data', function(data) {
+            // Update all spec fields
+            const fields = ['pi-model', 'ip', 'temperature', 'cpu', 'memory-percent', 'memory-usage', 'disk-percent', 'disk-usage'];
+            fields.forEach(field => {
+                const element = document.getElementById(field);
+                if (element && data[field.replace('-', '_')]) {
+                    element.textContent = data[field.replace('-', '_')];
+                }
+            });
+            
+            updateStatusIndicators(data);
+            updateEthStatus(); // Update Ethernet status
+        });
+
+                // Initial Ethernet logs request
         setTimeout(() => {
-            socket.emit('request_face_update');
+            socket.emit('request_eth_logs');
         }, 1000);
     </script>
+</body>
+</html>
 </body>
 </html>

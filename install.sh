@@ -125,6 +125,9 @@ install_dependencies() {
         "bluetooth"
         "bluez"
         "bluez-tools"
+        "net-tools"
+        "iproute2"
+        "iptables"
     )
     
     print_info "Installing essential packages..."
@@ -152,6 +155,90 @@ install_dependencies() {
     fi
     
     print_success "All dependencies installed"
+    echo
+}
+
+# Install penetration testing tools
+install_pentest_tools() {
+    print_header "Installing Penetration Testing Tools"
+    
+    print_warning "⚠️  FOR AUTHORIZED TESTING ONLY ⚠️"
+    print_info "These tools are for network security assessment on authorized networks only."
+    echo
+    
+    read -p "Install penetration testing tools? (Y/n) " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Nn]$ ]]; then
+        print_info "Skipping penetration testing tools installation"
+        echo
+        return
+    fi
+    
+    # Network scanning and enumeration tools
+    PENTEST_PACKAGES=(
+        "nmap"                  # Network scanner
+        "arp-scan"             # ARP scanner
+        "masscan"              # Fast port scanner (optional)
+        "nikto"                # Web vulnerability scanner
+        "dirb"                 # Web content scanner
+        "sslscan"              # SSL/TLS scanner
+        "enum4linux"           # SMB enumeration
+        "snmp"                 # SNMP tools
+        "onesixtyone"          # SNMP scanner
+        "hydra"                # Network login cracker
+        "john"                 # Password cracker
+        "aircrack-ng"          # WiFi security auditing
+        "reaver"               # WPS attack tool
+        "wireshark-common"     # Network protocol analyzer (CLI)
+        "tcpdump"              # Packet analyzer
+        "ettercap-common"      # Network sniffer
+        "dsniff"               # Network auditing tools
+        "nbtscan"              # NetBIOS scanner
+        "metasploit-framework" # Exploitation framework (optional, large install)
+    )
+    
+    print_info "Installing network scanning tools..."
+    for package in "${PENTEST_PACKAGES[@]}"; do
+        # Skip metasploit by default (large install)
+        if [[ "$package" == "metasploit-framework" ]]; then
+            read -p "Install Metasploit Framework? (large download, y/N) " -n 1 -r
+            echo
+            if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+                print_info "Skipping $package"
+                continue
+            fi
+        fi
+        
+        if dpkg -l | grep -q "^ii  $package "; then
+            print_success "$package already installed"
+        else
+            print_info "Installing $package..."
+            sudo apt-get install -y "$package" 2>/dev/null || {
+                print_warning "$package not available in repositories, skipping..."
+            }
+        fi
+    done
+    
+    # Install additional tools via Python pip
+    print_info "Installing Python-based security tools..."
+    source "${PROJECT_DIR}/.venv/bin/activate" || source "${PROJECT_DIR}/venv/bin/activate" || true
+    
+    pip install --quiet scapy impacket || print_warning "Some Python tools failed to install"
+    
+    # Verify key tools
+    print_info "Verifying tool installation..."
+    REQUIRED_TOOLS=("nmap" "arp-scan" "nikto" "sslscan")
+    
+    for tool in "${REQUIRED_TOOLS[@]}"; do
+        if command -v "$tool" >/dev/null 2>&1; then
+            print_success "$tool verified"
+        else
+            print_error "$tool not found - some features may not work"
+        fi
+    done
+    
+    print_success "Penetration testing tools installation completed"
+    print_warning "Remember: Use these tools responsibly and only on authorized networks!"
     echo
 }
 
@@ -423,6 +510,7 @@ main() {
     check_system
     update_system
     install_dependencies
+    install_pentest_tools
     setup_project
     configure_services
     create_systemd_service

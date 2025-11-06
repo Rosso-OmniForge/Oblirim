@@ -6,12 +6,39 @@ import subprocess
 import time
 import os
 import json
-from components.emotions import emotion_engine
-from components.face_component import render_face_component, get_face_css
+import threading
 from components.system_specs_component import render_system_specs_component, get_specs_css
+from components.eth_detector import eth_detector
+from components.eth_workflow import eth_workflow
+from components.tab_logger import tab_logger
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
+
+def handle_eth_workflow(state):
+    """Handle Ethernet state changes and trigger workflows"""
+    if state == 'connected':
+        # Get current network info
+        network_info = eth_detector.get_network_info()
+        if network_info['ip']:
+            # Start workflow in background thread
+            def run_workflow():
+                eth_workflow.run_workflow(network_info)
+            workflow_thread = threading.Thread(target=run_workflow, daemon=True)
+            workflow_thread.start()
+        else:
+            print("Ethernet connected but no IP assigned yet")
+    elif state == 'disconnected':
+        print("Ethernet disconnected - running fallback monitoring")
+
+def handle_workflow_progress(progress_data):
+    """Handle workflow progress updates"""
+    socketio.emit('eth_progress', progress_data)
+
+# Initialize workflow callbacks
+eth_workflow.add_progress_callback(handle_workflow_progress)
+eth_detector.workflow_callback = handle_eth_workflow
+eth_detector.socketio = socketio  # Pass socketio to detector for events
 
 def get_pi_model():
     """Detect Raspberry Pi model"""
@@ -143,56 +170,49 @@ def get_system_info():
         'memory_usage': f"{memory_used:.2f}GB / {memory_total:.2f}GB",
         'disk_percent': f"{disk_percent:.1f}%",
         'disk_usage': f"{disk_used:.2f}GB / {disk_total:.2f}GB",
-        'pi_model': pi_model,
-        'emotion': emotion_engine.get_emotion({
-            'cpu': f"{cpu:.1f}%",
-            'temperature': temp,
-            'memory_percent': f"{memory_percent:.1f}%"
-        }),
-        'ascii_face': emotion_engine.get_face(emotion_engine.get_emotion({
-            'cpu': f"{cpu:.1f}%",
-            'temperature': temp,
-            'memory_percent': f"{memory_percent:.1f}%"
-        }))
+        'pi_model': pi_model
     }
 
 @app.route('/')
 def index():
     return render_template('index.html')
 
-@app.route('/api/components/face')
-def face_component():
-    return render_face_component()
-
 @app.route('/api/components/specs')
 def specs_component():
     return render_system_specs_component()
-
-@app.route('/api/css/face')
-def face_css():
-    return get_face_css(), 200, {'Content-Type': 'text/css'}
 
 @app.route('/api/css/specs')
 def specs_css():
     return get_specs_css(), 200, {'Content-Type': 'text/css'}
 
-# Socket event handlers
-@socketio.on('request_face_update')
-def handle_face_update():
-    """Send current face and emotion state"""
-    data = get_system_info()
-    emotion = emotion_engine.get_emotion({
-        'cpu': data['cpu'],
-        'temperature': data['temperature'],
-        'memory_percent': data['memory_percent']
-    })
-    face = emotion_engine.get_face(emotion)
-    
-    socketio.emit('face_update', {
-        'face': face,
-        'emotion': emotion
-    })
+@app.route('/api/eth/status')
+def eth_status():
+    """Get Ethernet connection status"""
+    try:
+        status = eth_detector.get_eth0_state()
+        network_info = eth_detector.get_network_info() if status else {}
+        return {
+            'connected': status,
+            'ip': network_info.get('ip'),
+            'gateway': network_info.get('gateway'),
+            'subnet': network_info.get('subnet')
+        }
+    except Exception as e:
+        return {'connected': False, 'error': str(e)}
 
+@app.route('/api/network/tally')
+def network_tally():
+    """Get network tally information"""
+    try:
+        tally_file = os.path.join(os.path.dirname(__file__), 'data', 'network_tally.json')
+        if os.path.exists(tally_file):
+            with open(tally_file, 'r') as f:
+                return json.load(f)
+        return {'total_networks': 0, 'last_updated': None}
+    except Exception as e:
+        return {'error': str(e)}
+
+# Socket event handlers
 @socketio.on('run_script')
 def handle_run_script(data):
     """Handle script execution requests"""
@@ -219,6 +239,43 @@ def handle_request_logs():
     except Exception as e:
         socketio.emit('log_data', f"Error reading logs: {str(e)}")
 
+@socketio.on('request_eth_logs')
+def handle_request_eth_logs():
+    """Handle Ethernet log viewing requests"""
+    try:
+        logs = tab_logger.get_recent_logs('eth', 100)
+        socketio.emit('eth_log_data', logs)
+    except Exception as e:
+        socketio.emit('eth_log_data', f"Error reading ETH logs: {str(e)}")
+
+@socketio.on('start_eth_scan')
+def handle_start_eth_scan():
+    """Handle manual Ethernet scan requests"""
+    try:
+        network_info = eth_detector.get_network_info()
+        if network_info['ip']:
+            def run_manual_workflow():
+                eth_workflow.run_workflow(network_info)
+            workflow_thread = threading.Thread(target=run_manual_workflow, daemon=True)
+            workflow_thread.start()
+            socketio.emit('eth_scan_started', {'status': 'started', 'message': 'Manual scan initiated'})
+        else:
+            socketio.emit('eth_scan_started', {'status': 'error', 'message': 'No Ethernet connection'})
+    except Exception as e:
+        socketio.emit('eth_scan_started', {'status': 'error', 'message': str(e)})
+
+@socketio.on('stop_eth_scan')
+def handle_stop_eth_scan():
+    """Handle stop Ethernet scan requests"""
+    try:
+        # Stop the workflow
+        eth_workflow.stop_workflow()
+        # Log the stop event
+        tab_logger.log_event('eth', 'Scan stopped by user')
+        socketio.emit('eth_scan_stopped', {'status': 'stopped', 'message': 'Scan stopped successfully'})
+    except Exception as e:
+        socketio.emit('eth_scan_stopped', {'status': 'error', 'message': str(e)})
+
 @socketio.on('connect')
 def handle_connect():
     """Handle client connection"""
@@ -226,18 +283,6 @@ def handle_connect():
     # Send initial data
     data = get_system_info()
     socketio.emit('update_data', data)
-    
-    # Send initial face
-    emotion = emotion_engine.get_emotion({
-        'cpu': data['cpu'],
-        'temperature': data['temperature'],
-        'memory_percent': data['memory_percent']
-    })
-    face = emotion_engine.get_face(emotion)
-    socketio.emit('face_update', {
-        'face': face,
-        'emotion': emotion
-    })
 
 @socketio.on('disconnect')
 def handle_disconnect():
@@ -247,27 +292,35 @@ def handle_disconnect():
 if __name__ == '__main__':
     import threading
     
+    # Print startup banner
+    print("\n" + "="*60)
+    print(r"  ___  ____  _     ___ ____  ___ __  __ ")
+    print(r" / _ \| __ )| |   |_ _|  _ \|_ _|  \/  |")
+    print(r"| | | |  _ \| |    | || |_) || || |\/| |")
+    print(r"| |_| | |_) | |___ | ||  _ < | || |  | |")
+    print(r" \___/|____/|_____|___|_| \_\___|_|  |_|")
+    print("\n  Ethernet Penetration Testing Interface")
+    print("  ⚠️  FOR TESTING ONLY - NOT A FUCKING TOY ⚠️")
+    print("="*60)
+    print("\n📡 Starting Ethernet Detection Daemon...")
+    print("🌐 Starting Flask-SocketIO Server...")
+    print("\n" + "="*60 + "\n")
+    
     def background_thread():
         while True:
             time.sleep(2)
             data = get_system_info()
             socketio.emit('update_data', data)
-            
-            # Update face based on system state every 10 seconds
-            if int(time.time()) % 10 == 0:
-                emotion = emotion_engine.get_emotion({
-                    'cpu': data['cpu'],
-                    'temperature': data['temperature'],
-                    'memory_percent': data['memory_percent']
-                })
-                face = emotion_engine.get_face(emotion)
-                socketio.emit('face_update', {
-                    'face': face,
-                    'emotion': emotion
-                })
     
     # Start background thread
     thread = threading.Thread(target=background_thread, daemon=True)
     thread.start()
+    
+    # Start Ethernet detector
+    eth_detector.start()
+    
+    print("🚀 Server starting on http://0.0.0.0:5000")
+    print("📊 Dashboard ready!")
+    print("\n" + "="*60 + "\n")
     
     socketio.run(app, host='0.0.0.0', port=5000, debug=False, allow_unsafe_werkzeug=True)
