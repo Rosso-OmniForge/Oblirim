@@ -37,11 +37,11 @@ fi
 
 # Stop and disable service
 print_warning "Stopping and disabling service..."
-sudo systemctl stop oblirim-dashboard 2>/dev/null || true
-sudo systemctl disable oblirim-dashboard 2>/dev/null || true
+sudo systemctl stop oblirim 2>/dev/null || true
+sudo systemctl disable oblirim 2>/dev/null || true
 
 # Remove service file
-sudo rm -f /etc/systemd/system/oblirim-dashboard.service
+sudo rm -f /etc/systemd/system/oblirim.service
 sudo systemctl daemon-reload
 
 print_success "Service removed"

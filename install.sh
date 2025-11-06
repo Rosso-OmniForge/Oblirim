@@ -243,7 +243,7 @@ create_systemd_service() {
     print_header "Auto-Start Configuration"
     
     PROJECT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-    SERVICE_NAME="oblirim-dashboard"
+    SERVICE_NAME="oblirim"
     SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
     
     print_info "Creating systemd service for auto-start..."
@@ -252,16 +252,20 @@ create_systemd_service() {
     sudo tee "$SERVICE_FILE" > /dev/null << EOF
 [Unit]
 Description=OBLIRIM PWN Master Dashboard
-After=network.target
+After=network.target network-online.target
+Wants=network-online.target
 
 [Service]
 Type=simple
 User=${USER}
+Group=${USER}
 WorkingDirectory=${PROJECT_DIR}
 Environment=PATH=${PROJECT_DIR}/.venv/bin
 ExecStart=${PROJECT_DIR}/.venv/bin/python ${PROJECT_DIR}/app.py
 Restart=always
 RestartSec=10
+StandardOutput=journal
+StandardError=journal
 
 [Install]
 WantedBy=multi-user.target
@@ -272,13 +276,15 @@ EOF
     sudo systemctl daemon-reload
     sudo systemctl enable "$SERVICE_NAME"
     
-    print_success "Systemd service created and enabled"
-    print_info "Service will start automatically on boot"
-    print_info "Manual control:"
+    print_success "Systemd service created: /etc/systemd/system/oblirim.service"
+    print_success "Service enabled for auto-start on boot"
+    print_info "Manual control commands:"
     print_info "  Start:   sudo systemctl start $SERVICE_NAME"
     print_info "  Stop:    sudo systemctl stop $SERVICE_NAME"
+    print_info "  Restart: sudo systemctl restart $SERVICE_NAME"
     print_info "  Status:  sudo systemctl status $SERVICE_NAME"
     print_info "  Logs:    sudo journalctl -u $SERVICE_NAME -f"
+    print_info "  Disable: sudo systemctl disable $SERVICE_NAME"
     echo
 }
 
@@ -292,7 +298,7 @@ create_scripts() {
     cat > "${PROJECT_DIR}/start.sh" << 'EOF'
 #!/bin/bash
 # Start OBLIRIM Dashboard
-sudo systemctl start oblirim-dashboard
+sudo systemctl start oblirim
 echo "Dashboard started. Access at: http://localhost:5000"
 EOF
     
@@ -300,7 +306,7 @@ EOF
     cat > "${PROJECT_DIR}/stop.sh" << 'EOF'
 #!/bin/bash
 # Stop OBLIRIM Dashboard
-sudo systemctl stop oblirim-dashboard
+sudo systemctl stop oblirim
 echo "Dashboard stopped."
 EOF
     
@@ -309,10 +315,10 @@ EOF
 #!/bin/bash
 # Check OBLIRIM Dashboard status
 echo "=== OBLIRIM Dashboard Status ==="
-sudo systemctl status oblirim-dashboard --no-pager
+sudo systemctl status oblirim --no-pager
 echo ""
 echo "=== Recent Logs ==="
-sudo journalctl -u oblirim-dashboard --no-pager -n 10
+sudo journalctl -u oblirim --no-pager -n 10
 EOF
     
     # Create restart script
@@ -320,7 +326,7 @@ EOF
 #!/bin/bash
 # Restart OBLIRIM Dashboard
 echo "Restarting OBLIRIM Dashboard..."
-sudo systemctl restart oblirim-dashboard
+sudo systemctl restart oblirim
 echo "Dashboard restarted. Access at: http://localhost:5000"
 EOF
     

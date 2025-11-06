@@ -21,7 +21,7 @@ echo "========================"
 echo -e "${NC}"
 
 # Check if service is running
-if systemctl is-active --quiet oblirim-dashboard; then
+if systemctl is-active --quiet oblirim; then
     echo -e "${GREEN}✓ Dashboard service is running${NC}"
     LOCAL_IP=$(hostname -I | awk '{print $1}')
     echo -e "${CYAN}Access at: http://$LOCAL_IP:5000${NC}"

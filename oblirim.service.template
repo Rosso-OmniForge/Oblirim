@@ -1,0 +1,29 @@
+# OBLIRIM PWN Master Systemd Service Template
+# This file shows what the install script will create at /etc/systemd/system/oblirim.service
+
+[Unit]
+Description=OBLIRIM PWN Master Dashboard
+After=network.target network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=YOUR_USERNAME
+Group=YOUR_USERNAME
+WorkingDirectory=/path/to/oblirim
+Environment=PATH=/path/to/oblirim/.venv/bin
+ExecStart=/path/to/oblirim/.venv/bin/python /path/to/oblirim/app.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+
+# Manual Installation:
+# 1. Copy this file to /etc/systemd/system/oblirim.service
+# 2. Update paths and username
+# 3. Run: sudo systemctl daemon-reload
+# 4. Run: sudo systemctl enable oblirim
+# 5. Run: sudo systemctl start oblirim

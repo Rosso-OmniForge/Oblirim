@@ -172,13 +172,13 @@ components/
 ### **Service Management**
 ```bash
 # System service control
-sudo systemctl start oblirim-dashboard
-sudo systemctl stop oblirim-dashboard
-sudo systemctl restart oblirim-dashboard
-sudo systemctl status oblirim-dashboard
+sudo systemctl start oblirim
+sudo systemctl stop oblirim
+sudo systemctl restart oblirim
+sudo systemctl status oblirim
 
 # View logs
-sudo journalctl -u oblirim-dashboard -f
+sudo journalctl -u oblirim -f
 ```
 
 ## 🚨 Troubleshooting
@@ -201,7 +201,7 @@ sudo apt install python3-dev python3-pip
 ./status.sh
 
 # View detailed logs
-sudo journalctl -u oblirim-dashboard --no-pager
+sudo journalctl -u oblirim --no-pager
 
 # Test manual startup
 source .venv/bin/activate && python app.py
