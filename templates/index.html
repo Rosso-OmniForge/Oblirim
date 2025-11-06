@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>OBLIRIM PWN Master</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    
+    <style>
+        /* Lightweight Hacker Theme - Optimized for Pi 3 */
+        :root {
+            --bg: #000;
+            --bg-panel: #111;
+            --green: #0f0;
+            --cyan: #0ff;
+            --red: #f04;
+            --yellow: #ff0;
+            --gray: #666;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--green);
+            font: 11px 'Courier New', monospace;
+            height: 100vh;
+            max-width: 1080px;
+            margin: 0 auto;
+            padding: 10px;
+        }
+
+        .header {
+            text-align: center;
+            border-bottom: 1px solid var(--green);
+            padding: 10px 0;
+            margin-bottom: 15px;
+        }
+
+        .header h1 {
+            font-size: 16px;
+            letter-spacing: 2px;
+        }
+
+        /* Main content area */
+        .main-content {
+            display: flex;
+            gap: 10px;
+            height: calc(100vh - 80px);
+        }
+
+        /* Face component - 33% */
+        .face-panel {
+            flex: 0 0 33%;
+            background: var(--bg-panel);
+            border: 1px solid var(--green);
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #ascii-face {
+            font-size: 8px;
+            line-height: 1.1;
+            white-space: pre;
+            text-align: center;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .emotion-display {
+            font-size: 10px;
+            text-align: center;
+            color: var(--cyan);
+            margin-top: 5px;
+            padding: 3px;
+            border-top: 1px solid var(--gray);
+        }
+
+        /* System specs - 66% */
+        .specs-panel {
+            flex: 0 0 66%;
+            background: var(--bg-panel);
+            border: 1px solid var(--green);
+            padding: 10px;
+        }
+
+        .spec-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            font-size: 10px;
+        }
+
+        .spec-item {
+            padding: 4px;
+            border: 1px solid var(--gray);
+            background: var(--bg);
+        }
+
+        .spec-label {
+            color: var(--cyan);
+            display: inline-block;
+            width: 50px;
+            font-size: 9px;
+        }
+
+        .spec-value {
+            color: var(--green);
+            font-weight: bold;
+        }
+
+        /* Status indicators */
+        .status-up { color: var(--green); }
+        .status-down { color: var(--red); }
+        .status-warn { color: var(--yellow); }
+
+        /* Tabs - simplified */
+        .tabs {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 5px;
+            background: var(--bg-panel);
+            border: 1px solid var(--green);
+            border-bottom: none;
+            padding: 5px;
+            font-size: 9px;
+        }
+
+        .tab {
+            padding: 4px 8px;
+            border: 1px solid var(--gray);
+            background: var(--bg);
+            color: var(--cyan);
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+
+        .tab.active, .tab:hover {
+            background: var(--green);
+            color: var(--bg);
+        }
+
+        .tab-content {
+            display: none;
+            padding: 10px;
+            background: var(--bg-panel);
+            border: 1px solid var(--green);
+            margin-top: 10px;
+            font-size: 10px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Additional panels for other tabs */
+        .secondary-panels {
+            margin-top: 15px;
+        }
+
+        /* Button styling */
+        .btn {
+            background: var(--bg);
+            border: 1px solid var(--green);
+            color: var(--green);
+            padding: 5px 10px;
+            font: inherit;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-size: 9px;
+        }
+
+        .btn:hover {
+            background: var(--green);
+            color: var(--bg);
+        }
+
+        /* Output areas */
+        .output {
+            background: var(--bg);
+            border: 1px solid var(--gray);
+            padding: 8px;
+            font-size: 9px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 5px;
+        }
+
+        /* Performance optimizations */
+        * {
+            -webkit-transform: translateZ(0);
+            -moz-transform: translateZ(0);
+            -ms-transform: translateZ(0);
+            transform: translateZ(0);
+        }
+
+        /* Minimal scrollbar */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--gray);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>OBLIRIM PWN MASTER</h1>
+    </div>
+
+    <div class="main-content">
+        <!-- Face Panel (33%) -->
+        <div class="face-panel">
+            <div id="ascii-face">Loading...</div>
+            <div class="emotion-display">
+                State: <span id="emotion-status">Booting</span>
+            </div>
+        </div>
+
+        <!-- System Specs Panel (66%) -->
+        <div class="specs-panel">
+            <div class="spec-grid">
+                <div class="spec-item">
+                    <span class="spec-label">Model:</span>
+                    <span class="spec-value" id="pi-model">Loading...</span>
+                </div>
+                <div class="spec-item">
+                    <span class="spec-label">IP:</span>
+                    <span class="spec-value" id="ip">Loading...</span>
+                </div>
+                <div class="spec-item">
+                    <span class="spec-label">WiFi0:</span>
+                    <span class="spec-value status-indicator" id="wlan0">Loading...</span>
+                </div>
+                <div class="spec-item">
+                    <span class="spec-label">WiFi1:</span>
+                    <span class="spec-value status-indicator" id="wlan1">Loading...</span>
+                </div>
+                <div class="spec-item">
+                    <span class="spec-label">ETH:</span>
+                    <span class="spec-value status-indicator" id="eth0">Loading...</span>
+                </div>
+                <div class="spec-item">
+                    <span class="spec-label">BT:</span>
+                    <span class="spec-value status-indicator" id="bluetooth">Loading...</span>
+                </div>
+                <div class="spec-item">
+                    <span class="spec-label">Temp:</span>
+                    <span class="spec-value" id="temperature">Loading...</span>
+                </div>
+                <div class="spec-item">
+                    <span class="spec-label">CPU:</span>
+                    <span class="spec-value" id="cpu">Loading...</span>
+                </div>
+                <div class="spec-item">
+                    <span class="spec-label">RAM:</span>
+                    <span class="spec-value" id="memory-percent">Loading...</span>
+                </div>
+                <div class="spec-item">
+                    <span class="spec-label">Usage:</span>
+                    <span class="spec-value" id="memory-usage">Loading...</span>
+                </div>
+                <div class="spec-item">
+                    <span class="spec-label">Disk:</span>
+                    <span class="spec-value" id="disk-percent">Loading...</span>
+                </div>
+                <div class="spec-item">
+                    <span class="spec-label">Space:</span>
+                    <span class="spec-value" id="disk-usage">Loading...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Secondary content for other tabs -->
+    <div class="secondary-panels">
+        <div class="tab-content" id="scripts">
+            <button class="btn" id="run-script-btn">Run Script</button>
+            <div class="output" id="script-output"></div>
+        </div>
+        
+        <div class="tab-content" id="logs">
+            <button class="btn" id="refresh-logs-btn">Refresh Logs</button>
+            <div class="output" id="log-display"></div>
+        </div>
+        
+        <div class="tab-content" id="tools">
+            <p>Network Tools</p>
+            <button class="btn">Ping Test</button>
+            <button class="btn">Port Scan</button>
+        </div>
+        
+        <div class="tab-content" id="config">
+            <p>Configuration</p>
+            <button class="btn">Edit Config</button>
+        </div>
+    </div>
+
+    <!-- Bottom tabs -->
+    <div class="tabs">
+        <div class="tab active" data-target="main">DASH</div>
+        <div class="tab" data-target="scripts">SCRIPTS</div>
+        <div class="tab" data-target="logs">LOGS</div>
+        <div class="tab" data-target="tools">TOOLS</div>
+        <div class="tab" data-target="config">CONFIG</div>
+    </div>
+
+    <script>
+        const socket = io();
+        let currentEmotion = 'neutral';
+
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const target = tab.dataset.target;
+                
+                // Update active tab
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                // Show/hide content
+                if (target === 'main') {
+                    document.querySelector('.main-content').style.display = 'flex';
+                    document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+                } else {
+                    document.querySelector('.main-content').style.display = 'none';
+                    document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+                    document.getElementById(target).classList.add('active');
+                }
+            });
+        });
+
+        // System info update
+        function updateStatusIndicators(data) {
+            const statusElements = {
+                'wlan0': data.wlan0,
+                'wlan1': data.wlan1,
+                'eth0': data.eth0,
+                'bluetooth': data.bluetooth
+            };
+
+            for (const [id, status] of Object.entries(statusElements)) {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.textContent = status || 'N/A';
+                    element.className = 'spec-value status-indicator';
+                    if (status === 'Up') {
+                        element.classList.add('status-up');
+                    } else if (status === 'Down') {
+                        element.classList.add('status-down');
+                    }
+                }
+            }
+        }
+
+        // Socket events
+        socket.on('update_data', function(data) {
+            // Update all spec fields
+            const fields = ['pi-model', 'ip', 'temperature', 'cpu', 'memory-percent', 'memory-usage', 'disk-percent', 'disk-usage'];
+            fields.forEach(field => {
+                const element = document.getElementById(field);
+                if (element && data[field.replace('-', '_')]) {
+                    element.textContent = data[field.replace('-', '_')];
+                }
+            });
+            
+            updateStatusIndicators(data);
+        });
+
+        socket.on('face_update', function(data) {
+            document.getElementById('ascii-face').textContent = data.face;
+            document.getElementById('emotion-status').textContent = data.emotion;
+            currentEmotion = data.emotion;
+        });
+
+        socket.on('script_output', function(data) {
+            const output = data.output || '';
+            const error = data.error || '';
+            document.getElementById('script-output').innerHTML = 
+                (output ? `<div>${output}</div>` : '') + 
+                (error ? `<div style="color: var(--red)">${error}</div>` : '');
+        });
+
+        socket.on('log_data', function(data) {
+            document.getElementById('log-display').textContent = data;
+        });
+
+        socket.on('connect', () => {
+            console.log('Connected to server');
+            socket.emit('request_face_update');
+        });
+
+        // Button handlers
+        document.getElementById('run-script-btn')?.addEventListener('click', () => {
+            socket.emit('run_script', { script: 'example' });
+        });
+
+        document.getElementById('refresh-logs-btn')?.addEventListener('click', () => {
+            socket.emit('request_logs');
+        });
+
+        // Request initial face update
+        setTimeout(() => {
+            socket.emit('request_face_update');
+        }, 1000);
+    </script>
+</body>
+</html>

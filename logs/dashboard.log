@@ -1,0 +1,18 @@
+Traceback (most recent call last):
+  File "/home/nero/oblirim/app.py", line 93, in <module>
+    socketio.run(app, host='0.0.0.0', port=5000)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/nero/oblirim/.venv/lib/python3.13/site-packages/flask_socketio/__init__.py", line 640, in run
+    raise RuntimeError('The Werkzeug web server is not '
+    ...<2 lines>...
+                       'run() method to disable this error.')
+RuntimeError: The Werkzeug web server is not designed to run in production. Pass allow_unsafe_werkzeug=True to the run() method to disable this error.
+Traceback (most recent call last):
+  File "/home/nero/oblirim/app.py", line 93, in <module>
+    socketio.run(app, host='0.0.0.0', port=5000)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/nero/oblirim/.venv/lib/python3.13/site-packages/flask_socketio/__init__.py", line 640, in run
+    raise RuntimeError('The Werkzeug web server is not '
+    ...<2 lines>...
+                       'run() method to disable this error.')
+RuntimeError: The Werkzeug web server is not designed to run in production. Pass allow_unsafe_werkzeug=True to the run() method to disable this error.

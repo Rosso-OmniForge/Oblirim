@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>OBLIRIM PWN Master</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    
+    <style>
+        /* Hacker Aesthetic Color Scheme */
+        :root {
+            --bg-primary: #000000;
+            --bg-secondary: #0a0a0a;
+            --bg-tertiary: #111111;
+            --accent-green: #00ff00;
+            --accent-blue: #00ffff;
+            --accent-red: #ff0044;
+            --accent-yellow: #ffff00;
+            --text-primary: #00ff00;
+            --text-secondary: #00ffff;
+            --text-dim: #666666;
+            --border-glow: #00ff0080;
+            --error-glow: #ff004480;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.4;
+            overflow-x: hidden;
+            height: 100vh;
+            width: 100vw;
+            max-width: 1080px;
+            margin: 0 auto;
+        }
+
+        /* Scanline effect */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0, 255, 0, 0.03) 2px,
+                rgba(0, 255, 0, 0.03) 4px
+            );
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        /* Matrix-style background */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 20%, rgba(0, 255, 0, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(0, 255, 255, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .container {
+            padding: 1rem;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--border-glow);
+            margin-bottom: 1rem;
+            position: relative;
+        }
+
+        .header::before {
+            content: '> OBLIRIM PWN MASTER <';
+            display: block;
+            color: var(--accent-green);
+            font-weight: bold;
+            font-size: 1.2rem;
+            text-shadow: 0 0 10px var(--accent-green);
+            animation: flicker 2s infinite alternate;
+        }
+
+        .header::after {
+            content: '[SYSTEM ACTIVE]';
+            display: block;
+            color: var(--accent-blue);
+            font-size: 0.7rem;
+            margin-top: 0.5rem;
+            opacity: 0.8;
+        }
+
+        @keyframes flicker {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        /* Main content area */
+        .main-content {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr;
+            grid-template-rows: auto auto 1fr;
+            gap: 1rem;
+            overflow: hidden;
+        }
+
+        /* Component tiles */
+        .component-tile {
+            background: var(--bg-secondary);
+            border: 1px solid var(--text-dim);
+            border-radius: 0;
+            padding: 1rem;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .component-tile:hover {
+            border-color: var(--border-glow);
+            box-shadow: 0 0 15px var(--border-glow);
+        }
+
+        .tile-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Face tile specific */
+        .face-tile {
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+            border: 1px solid var(--accent-green);
+            min-height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .face-tile::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 0, 0.1), transparent);
+            animation: scan 4s linear infinite;
+        }
+
+        @keyframes scan {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        .ascii-art {
+            color: var(--accent-green);
+            font-family: 'Courier New', monospace;
+            font-size: 1rem;
+            line-height: 1.1;
+            text-align: center;
+            margin: 0;
+            text-shadow: 0 0 8px var(--accent-green);
+            animation: glow 3s ease-in-out infinite alternate;
+            white-space: pre;
+        }
+
+        @keyframes glow {
+            from { text-shadow: 0 0 5px var(--accent-green); }
+            to { text-shadow: 0 0 15px var(--accent-green), 0 0 25px var(--accent-green); }
+        }
+
+        /* System specs tile */
+        .specs-tile {
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-tertiary) 100%);
+            border: 1px solid var(--accent-blue);
+            position: relative;
+        }
+
+        .specs-tile::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 2px;
+            height: 100%;
+            background: linear-gradient(to bottom, transparent, var(--accent-blue), transparent);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        .specs-grid {
+            display: grid;
+            gap: 0.5rem;
+            font-family: 'Courier New', monospace;
+        }
+
+        .spec-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.4rem 0;
+            border-bottom: 1px solid rgba(0, 255, 255, 0.1);
+        }
+
+        .spec-row:last-child {
+            border-bottom: none;
+        }
+
+        .spec-label {
+            color: var(--accent-blue);
+            font-weight: bold;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            min-width: 70px;
+        }
+
+        .spec-value {
+            color: var(--text-primary);
+            font-size: 0.8rem;
+            text-align: right;
+            font-weight: bold;
+            text-shadow: 0 0 3px currentColor;
+        }
+
+        /* Status indicators */
+        .status-up {
+            color: var(--accent-green) !important;
+            text-shadow: 0 0 5px var(--accent-green) !important;
+        }
+
+        .status-down {
+            color: var(--accent-red) !important;
+            text-shadow: 0 0 5px var(--accent-red) !important;
+        }
+
+        /* Terminal/Console area */
+        .console-area {
+            background: var(--bg-primary);
+            border: 1px solid var(--accent-yellow);
+            padding: 1rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.7rem;
+            min-height: 200px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .console-area::before {
+            content: '> CONSOLE OUTPUT';
+            position: sticky;
+            top: 0;
+            background: var(--bg-primary);
+            color: var(--accent-yellow);
+            font-weight: bold;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--accent-yellow);
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .console-line {
+            color: var(--text-secondary);
+            margin: 0.2rem 0;
+        }
+
+        .console-line.error {
+            color: var(--accent-red);
+        }
+
+        .console-line.success {
+            color: var(--accent-green);
+        }
+
+        /* Navigation tabs (if needed) */
+        .nav-terminal {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            overflow-x: auto;
+        }
+
+        .nav-button {
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            border: 1px solid var(--text-dim);
+            padding: 0.5rem 1rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.7rem;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .nav-button:hover {
+            border-color: var(--accent-green);
+            color: var(--accent-green);
+            text-shadow: 0 0 5px var(--accent-green);
+        }
+
+        .nav-button.active {
+            background: var(--bg-tertiary);
+            border-color: var(--accent-green);
+            color: var(--accent-green);
+            text-shadow: 0 0 5px var(--accent-green);
+        }
+
+        /* Mobile optimizations for portrait */
+        @media (max-width: 1080px) {
+            .container {
+                padding: 0.5rem;
+            }
+            
+            .header::before {
+                font-size: 1rem;
+            }
+            
+            .ascii-art {
+                font-size: 0.8rem;
+            }
+            
+            .spec-label, .spec-value {
+                font-size: 0.7rem;
+            }
+        }
+
+        /* Loading animation */
+        .loading {
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.3; }
+        }
+
+        /* Error state */
+        .error-state {
+            color: var(--accent-red) !important;
+            text-shadow: 0 0 5px var(--accent-red) !important;
+        }
+
+        /* Glitch effect for errors */
+        .glitch {
+            animation: glitch 0.5s infinite;
+        }
+
+        @keyframes glitch {
+            0% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+            100% { transform: translate(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <!-- Header content generated via CSS -->
+        </div>
+        
+        <div class="main-content">
+            <!-- Face tile -->
+            <div class="component-tile face-tile">
+                <div class="tile-content">
+                    <pre id="ascii-face" class="ascii-art">
+╭─────────────╮
+│  ●     ●    │
+│             │
+│      ─      │
+│             │
+╰─────────────╯
+                    </pre>
+                </div>
+            </div>
+
+            <!-- System specs tile -->
+            <div class="component-tile specs-tile">
+                <div class="tile-content">
+                    <div class="specs-grid">
+                        <div class="spec-row">
+                            <span class="spec-label">MODEL</span>
+                            <span class="spec-value loading" id="pi-model">LOADING...</span>
+                        </div>
+                        <div class="spec-row">
+                            <span class="spec-label">IP</span>
+                            <span class="spec-value loading" id="ip">LOADING...</span>
+                        </div>
+                        <div class="spec-row">
+                            <span class="spec-label">WLAN0</span>
+                            <span class="spec-value status-indicator loading" id="wlan0">LOADING...</span>
+                        </div>
+                        <div class="spec-row">
+                            <span class="spec-label">WLAN1</span>
+                            <span class="spec-value status-indicator loading" id="wlan1">LOADING...</span>
+                        </div>
+                        <div class="spec-row">
+                            <span class="spec-label">ETH0</span>
+                            <span class="spec-value status-indicator loading" id="eth0">LOADING...</span>
+                        </div>
+                        <div class="spec-row">
+                            <span class="spec-label">BT</span>
+                            <span class="spec-value status-indicator loading" id="bluetooth">LOADING...</span>
+                        </div>
+                        <div class="spec-row">
+                            <span class="spec-label">TEMP</span>
+                            <span class="spec-value loading" id="temperature">LOADING...</span>
+                        </div>
+                        <div class="spec-row">
+                            <span class="spec-label">CPU</span>
+                            <span class="spec-value loading" id="cpu">LOADING...</span>
+                        </div>
+                        <div class="spec-row">
+                            <span class="spec-label">RAM</span>
+                            <span class="spec-value loading" id="memory-percent">LOADING...</span>
+                        </div>
+                        <div class="spec-row">
+                            <span class="spec-label">DISK</span>
+                            <span class="spec-value loading" id="disk-percent">LOADING...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Console/Terminal area -->
+            <div class="console-area">
+                <div id="console-output">
+                    <div class="console-line success">SYSTEM INITIALIZED</div>
+                    <div class="console-line">CONNECTING TO SENSORS...</div>
+                    <div class="console-line">EMOTION ENGINE ONLINE</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        
+        // Remove loading classes when data loads
+        function removeLoading(elementId) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.classList.remove('loading');
+            }
+        }
+
+        function updateStatusIndicators(data) {
+            const statusElements = {
+                'wlan0': data.wlan0,
+                'wlan1': data.wlan1,
+                'eth0': data.eth0,
+                'bluetooth': data.bluetooth
+            };
+
+            for (const [id, status] of Object.entries(statusElements)) {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.textContent = status || 'N/A';
+                    element.className = 'spec-value status-indicator';
+                    
+                    if (status === 'Up') {
+                        element.classList.add('status-up');
+                    } else if (status === 'Down') {
+                        element.classList.add('status-down');
+                    }
+                    
+                    if (status === 'Error') {
+                        element.classList.add('error-state', 'glitch');
+                    }
+                }
+            }
+        }
+
+        function addConsoleLog(message, type = 'info') {
+            const console = document.getElementById('console-output');
+            const line = document.createElement('div');
+            line.className = `console-line ${type}`;
+            line.textContent = `${new Date().toLocaleTimeString()} > ${message}`;
+            console.appendChild(line);
+            
+            // Keep only last 10 lines
+            while (console.children.length > 10) {
+                console.removeChild(console.firstChild);
+            }
+            
+            console.scrollTop = console.scrollHeight;
+        }
+
+        // Listen for system updates
+        socket.on('update_data', function(data) {
+            // Update system info
+            const updates = {
+                'pi-model': data.pi_model,
+                'ip': data.ip,
+                'temperature': data.temperature,
+                'cpu': data.cpu,
+                'memory-percent': data.memory_percent,
+                'disk-percent': data.disk_percent
+            };
+
+            for (const [id, value] of Object.entries(updates)) {
+                const element = document.getElementById(id);
+                if (element && value !== undefined) {
+                    element.textContent = value;
+                    removeLoading(id);
+                    
+                    if (value === 'Error') {
+                        element.classList.add('error-state', 'glitch');
+                    }
+                }
+            }
+
+            // Update status indicators
+            updateStatusIndicators(data);
+
+            // Update face
+            if (data.ascii_face) {
+                const faceElement = document.getElementById('ascii-face');
+                if (faceElement) {
+                    faceElement.textContent = data.ascii_face;
+                }
+            }
+
+            // Log emotion changes
+            if (data.emotion) {
+                addConsoleLog(`EMOTION STATE: ${data.emotion.toUpperCase()}`, 'success');
+            }
+        });
+
+        socket.on('connect', () => {
+            addConsoleLog('SOCKET CONNECTION ESTABLISHED', 'success');
+        });
+
+        socket.on('disconnect', () => {
+            addConsoleLog('CONNECTION LOST - ATTEMPTING RECONNECT', 'error');
+        });
+
+        // Initial connection log
+        addConsoleLog('OBLIRIM SYSTEM STARTING...', 'info');
+    </script>
+</body>
+</html>
