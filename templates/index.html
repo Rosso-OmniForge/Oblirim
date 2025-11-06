@@ -648,9 +648,18 @@
                         <div class="mini-progress-text" id="dash-progress-text">0%</div>
                     </div>
                     <div class="scan-summary" id="dash-scan-summary">
-                        <div><span class="stat-label">Hosts:</span> <span id="dash-hosts">0</span></div>
-                        <div><span class="stat-label">Ports:</span> <span id="dash-ports">0</span></div>
-                        <div><span class="stat-label">Vulns:</span> <span id="dash-vulns" class="vuln-count">0</span></div>
+                        <div>
+                            <span class="stat-label">Hosts:</span> 
+                            <span id="dash-hosts-current">0</span>/<span id="dash-hosts-historical">0</span>
+                        </div>
+                        <div>
+                            <span class="stat-label">Ports:</span> 
+                            <span id="dash-ports-current">0</span>/<span id="dash-ports-historical">0</span>
+                        </div>
+                        <div>
+                            <span class="stat-label">Vulns:</span> 
+                            <span class="vuln-count" id="dash-vulns-current">0</span>/<span id="dash-vulns-historical">0</span>
+                        </div>
                     </div>
                 </div>
                 <div class="eth-blocked-notice" id="dash-blocked-notice" style="display: none;">
@@ -711,9 +720,31 @@
                     </div>
                     
                     <div class="scan-details">
-                        Devices Found: <span id="devices-found">0</span> | 
-                        Open Ports: <span id="open-ports">0</span> | 
-                        Vulnerabilities: <span id="vulnerabilities">0</span>
+                        <div class="metric">
+                            <span class="metric-label">Devices:</span>
+                            <span class="metric-value">
+                                CPT: <span id="devices-current">0</span> | 
+                                HPT: <span id="devices-historical">0</span>
+                            </span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Ports:</span>
+                            <span class="metric-value">
+                                CPT: <span id="ports-current">0</span> | 
+                                HPT: <span id="ports-historical">0</span>
+                            </span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Vulnerabilities:</span>
+                            <span class="metric-value">
+                                CPT: <span id="vulns-current">0</span> | 
+                                HPT: <span id="vulns-historical">0</span>
+                            </span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Total Scans:</span>
+                            <span class="metric-value" id="total-scans">0</span>
+                        </div>
                     </div>
                 </div>
                 
@@ -831,6 +862,8 @@
 
         socket.on('eth_progress', function(data) {
             updateEthProgress(data);
+            // Update metrics whenever progress is reported
+            updateEthMetrics();
         });
 
         socket.on('eth_scan_started', function(data) {
@@ -1051,6 +1084,9 @@
                             networksScanned.textContent = '0';
                             dashNetworksScanned.textContent = '0';
                         });
+                    
+                    // Fetch and update metrics
+                    updateEthMetrics();
                 } else {
                     ethStatus.textContent = 'DISCONNECTED';
                     ethStatus.className = 'status-value disconnected';
@@ -1065,6 +1101,31 @@
                     document.getElementById('dash-scan-state').textContent = 'Idle (No Connection)';
                 }
             }
+        }
+        
+        // Update Ethernet metrics (current + historical)
+        function updateEthMetrics() {
+            fetch('/api/eth/metrics')
+                .then(response => response.json())
+                .then(data => {
+                    // Update ETH tab metrics
+                    document.getElementById('devices-current').textContent = data.current.hosts || 0;
+                    document.getElementById('devices-historical').textContent = data.historical.hosts || 0;
+                    document.getElementById('ports-current').textContent = data.current.ports || 0;
+                    document.getElementById('ports-historical').textContent = data.historical.ports || 0;
+                    document.getElementById('vulns-current').textContent = data.current.vulnerabilities || 0;
+                    document.getElementById('vulns-historical').textContent = data.historical.vulnerabilities || 0;
+                    document.getElementById('total-scans').textContent = data.historical.scans || 0;
+                    
+                    // Update Dashboard metrics
+                    document.getElementById('dash-hosts-current').textContent = data.current.hosts || 0;
+                    document.getElementById('dash-hosts-historical').textContent = data.historical.hosts || 0;
+                    document.getElementById('dash-ports-current').textContent = data.current.ports || 0;
+                    document.getElementById('dash-ports-historical').textContent = data.historical.ports || 0;
+                    document.getElementById('dash-vulns-current').textContent = data.current.vulnerabilities || 0;
+                    document.getElementById('dash-vulns-historical').textContent = data.historical.vulnerabilities || 0;
+                })
+                .catch(err => console.error('Error fetching eth metrics:', err));
         }
 
         // Show blocked notice
@@ -1117,10 +1178,16 @@
             updateEthStatus(); // Update Ethernet status
         });
 
-                // Initial Ethernet logs request
+        // Initial Ethernet logs request
         setTimeout(() => {
             socket.emit('request_eth_logs');
+            updateEthMetrics(); // Initial metrics load
         }, 1000);
+        
+        // Periodic metrics update (every 3 seconds)
+        setInterval(() => {
+            updateEthMetrics();
+        }, 3000);
     </script>
 </body>
 </html>

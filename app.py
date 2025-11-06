@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, jsonify
 from flask_socketio import SocketIO
 import psutil
 import socket
@@ -11,6 +11,7 @@ from components.system_specs_component import render_system_specs_component, get
 from components.eth_detector import eth_detector
 from components.eth_workflow import eth_workflow
 from components.tab_logger import tab_logger
+from components.network_metrics import network_metrics
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
@@ -201,8 +202,8 @@ def eth_status():
         return {'connected': False, 'error': str(e)}
 
 @app.route('/api/network/tally')
-def network_tally():
-    """Get network tally information"""
+def get_network_tally():
+    """Get the network tally count"""
     try:
         tally_file = os.path.join(os.path.dirname(__file__), 'data', 'network_tally.json')
         if os.path.exists(tally_file):
@@ -211,6 +212,33 @@ def network_tally():
         return {'total_networks': 0, 'last_updated': None}
     except Exception as e:
         return {'error': str(e)}
+
+@app.route('/api/eth/metrics')
+def get_eth_metrics():
+    """Get current Ethernet network metrics"""
+    try:
+        # Get current network info
+        network_info = eth_detector.get_network_info()
+        if network_info.get('subnet'):
+            # Calculate network range
+            subnet_parts = network_info['subnet'].split('/')
+            if len(subnet_parts) == 2:
+                ip_addr = subnet_parts[0]
+                cidr = subnet_parts[1]
+                ip_parts = ip_addr.split('.')
+                if len(ip_parts) == 4:
+                    network_range = f"{ip_parts[0]}.{ip_parts[1]}.{ip_parts[2]}.0/{cidr}"
+                    metrics = network_metrics.get_network_metrics(network_range)
+                    return jsonify(metrics)
+        
+        # Return empty metrics if no network
+        return jsonify({
+            'current': {'hosts': 0, 'ports': 0, 'vulnerabilities': 0, 'devices': 0},
+            'historical': {'hosts': 0, 'ports': 0, 'vulnerabilities': 0, 'scans': 0},
+            'metadata': {'first_seen': None, 'last_scan': None, 'scan_count': 0}
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)})
 
 # Socket event handlers
 @socketio.on('run_script')
@@ -283,6 +311,13 @@ def handle_connect():
     # Send initial data
     data = get_system_info()
     socketio.emit('update_data', data)
+    
+    # If a scan is running, send current progress
+    if eth_workflow.is_running:
+        socketio.emit('eth_scan_started', {'status': 'running', 'message': 'Scan in progress'})
+        # Send current phase info if available
+        if hasattr(eth_workflow, 'current_phase'):
+            socketio.emit('eth_progress', eth_workflow.current_phase)
 
 @socketio.on('disconnect')
 def handle_disconnect():
@@ -300,10 +335,10 @@ if __name__ == '__main__':
     print(r"| |_| | |_) | |___ | ||  _ < | || |  | |")
     print(r" \___/|____/|_____|___|_| \_\___|_|  |_|")
     print("\n  Ethernet Penetration Testing Interface")
-    print("  ⚠️  FOR TESTING ONLY - NOT A FUCKING TOY ⚠️")
+    print("    FOR TESTING ONLY - NOT A FUCKING TOY ")
     print("="*60)
-    print("\n📡 Starting Ethernet Detection Daemon...")
-    print("🌐 Starting Flask-SocketIO Server...")
+    print(" Starting Ethernet Detection Daemon...")
+    print(" Starting Flask-SocketIO Server...")
     print("\n" + "="*60 + "\n")
     
     def background_thread():
@@ -319,8 +354,8 @@ if __name__ == '__main__':
     # Start Ethernet detector
     eth_detector.start()
     
-    print("🚀 Server starting on http://0.0.0.0:5000")
-    print("📊 Dashboard ready!")
+    print(" Server starting on http://0.0.0.0:5000")
+    print(" Dashboard ready!")
     print("\n" + "="*60 + "\n")
     
     socketio.run(app, host='0.0.0.0', port=5000, debug=False, allow_unsafe_werkzeug=True)

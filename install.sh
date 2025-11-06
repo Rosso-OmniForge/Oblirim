@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# OBLIRIM PWN Master - Complete Installation Script
-# This script sets up everything needed from a fresh Raspberry Pi OS installation
+# OBLIRIM - Ethernet Penetration Testing Interface
+# Complete Installation Script for Raspberry Pi
 # Run with: ./install.sh
 
 set -e  # Exit on any error
@@ -25,7 +25,8 @@ print_banner() {
     echo "| |_| | |_) | |___ | ||  _ < | || |  | |"
     echo " \___/|____/|_____|___|_| \_\___|_|  |_|"
     echo ""
-    echo "PWN MASTER - Complete Installation Script"
+    echo "Ethernet Penetration Testing Interface"
+    echo "⚠️  FOR TESTING ONLY - NOT A FUCKING TOY ⚠️"
     echo "=========================================="
     echo -e "${NC}"
 }
@@ -162,83 +163,97 @@ install_dependencies() {
 install_pentest_tools() {
     print_header "Installing Penetration Testing Tools"
     
-    print_warning "⚠️  FOR AUTHORIZED TESTING ONLY ⚠️"
-    print_info "These tools are for network security assessment on authorized networks only."
+    print_warning "⚠️  FOR TESTING ONLY - NOT A FUCKING TOY ⚠️"
+    print_info "These tools are for network security assessment."
     echo
     
-    read -p "Install penetration testing tools? (Y/n) " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Nn]$ ]]; then
-        print_info "Skipping penetration testing tools installation"
-        echo
-        return
-    fi
-    
-    # Network scanning and enumeration tools
+    # Essential penetration testing packages
     PENTEST_PACKAGES=(
-        "nmap"                  # Network scanner
-        "arp-scan"             # ARP scanner
-        "masscan"              # Fast port scanner (optional)
+        "nmap"                  # Network scanner - ESSENTIAL
         "nikto"                # Web vulnerability scanner
-        "dirb"                 # Web content scanner
         "sslscan"              # SSL/TLS scanner
-        "enum4linux"           # SMB enumeration
-        "snmp"                 # SNMP tools
+        "enum4linux"           # SMB enumeration for Linux
+        "snmp"                 # SNMP tools base
+        "snmp-mibs-downloader" # SNMP MIBs for better enumeration
         "onesixtyone"          # SNMP scanner
+        "tcpdump"              # Packet analyzer
+        "nbtscan"              # NetBIOS scanner
+        "dirb"                 # Web content scanner
+        "masscan"              # Ultra-fast port scanner
+    )
+    
+    # Optional but useful tools
+    OPTIONAL_PACKAGES=(
         "hydra"                # Network login cracker
         "john"                 # Password cracker
         "aircrack-ng"          # WiFi security auditing
-        "reaver"               # WPS attack tool
         "wireshark-common"     # Network protocol analyzer (CLI)
-        "tcpdump"              # Packet analyzer
         "ettercap-common"      # Network sniffer
         "dsniff"               # Network auditing tools
-        "nbtscan"              # NetBIOS scanner
-        "metasploit-framework" # Exploitation framework (optional, large install)
     )
     
-    print_info "Installing network scanning tools..."
+    print_info "Installing essential penetration testing tools..."
     for package in "${PENTEST_PACKAGES[@]}"; do
-        # Skip metasploit by default (large install)
-        if [[ "$package" == "metasploit-framework" ]]; then
-            read -p "Install Metasploit Framework? (large download, y/N) " -n 1 -r
-            echo
-            if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-                print_info "Skipping $package"
-                continue
-            fi
-        fi
-        
         if dpkg -l | grep -q "^ii  $package "; then
             print_success "$package already installed"
         else
             print_info "Installing $package..."
-            sudo apt-get install -y "$package" 2>/dev/null || {
-                print_warning "$package not available in repositories, skipping..."
+            sudo DEBIAN_FRONTEND=noninteractive apt-get install -y "$package" 2>&1 | grep -v "^Get:" || {
+                print_warning "$package not available, skipping..."
             }
         fi
     done
     
-    # Install additional tools via Python pip
-    print_info "Installing Python-based security tools..."
-    source "${PROJECT_DIR}/.venv/bin/activate" || source "${PROJECT_DIR}/venv/bin/activate" || true
+    # Install arp-scan (requires special handling on some systems)
+    if ! command -v arp-scan >/dev/null 2>&1; then
+        print_info "Installing arp-scan..."
+        sudo DEBIAN_FRONTEND=noninteractive apt-get install -y arp-scan || print_warning "arp-scan installation failed"
+    else
+        print_success "arp-scan already installed"
+    fi
     
-    pip install --quiet scapy impacket || print_warning "Some Python tools failed to install"
+    # Install snmp-check separately (may be in different repos)
+    print_info "Checking for snmp-check..."
+    if ! command -v snmp-check >/dev/null 2>&1; then
+        print_warning "snmp-check not in default repos - attempting alternative installation..."
+        # Try to install from source or alternative repo
+        sudo DEBIAN_FRONTEND=noninteractive apt-get install -y snmp-check 2>/dev/null || \
+            print_warning "snmp-check unavailable - some SNMP features will be limited"
+    else
+        print_success "snmp-check already installed"
+    fi
     
-    # Verify key tools
-    print_info "Verifying tool installation..."
-    REQUIRED_TOOLS=("nmap" "arp-scan" "nikto" "sslscan")
+    # Verify CRITICAL tools
+    print_info "Verifying critical tool installation..."
+    REQUIRED_TOOLS=("nmap" "nikto")
+    RECOMMENDED_TOOLS=("sslscan" "enum4linux" "onesixtyone")
     
+    ALL_OK=true
     for tool in "${REQUIRED_TOOLS[@]}"; do
         if command -v "$tool" >/dev/null 2>&1; then
-            print_success "$tool verified"
+            VERSION=$($tool --version 2>&1 | head -1 || echo "installed")
+            print_success "$tool verified: $VERSION"
         else
-            print_error "$tool not found - some features may not work"
+            print_error "$tool NOT FOUND - workflow will fail!"
+            ALL_OK=false
         fi
     done
     
-    print_success "Penetration testing tools installation completed"
-    print_warning "Remember: Use these tools responsibly and only on authorized networks!"
+    for tool in "${RECOMMENDED_TOOLS[@]}"; do
+        if command -v "$tool" >/dev/null 2>&1; then
+            print_success "$tool verified"
+        else
+            print_warning "$tool not found - some features may not work"
+        fi
+    done
+    
+    if [ "$ALL_OK" = true ]; then
+        print_success "All critical penetration testing tools installed successfully!"
+    else
+        print_error "Some critical tools are missing - please install manually"
+    fi
+    
+    print_warning "Remember: FOR TESTING ONLY - NOT A FUCKING TOY!"
     echo
 }
 

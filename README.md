@@ -2,33 +2,50 @@
 
 **⚠️ FOR TESTING ONLY - NOT A FUCKING TOY ⚠️**
 
-A high-performance, always-running Ethernet penetration testing web interface designed for Raspberry Pi. Features automatic network detection, structured logging, and a comprehensive 4-phase vulnerability assessment workflow.
+A high-performance, always-running Ethernet penetration testing web interface designed for Raspberry Pi. Features automatic network detection, structured logging, comprehensive 4-phase vulnerability assessment workflow, and real-time progress tracking with historical metrics.
 
-## 🚀 Features
+## 🚀 Key Features
 
-### 🔍 **Always-Running Network Detection**
+### 🔍 **Auto-Detection & Auto-Scan**
 - **Automatic Ethernet monitoring** via background daemon
-- **Real-time connection state tracking** using `eth0` carrier detection
-- **Auto-trigger workflows** when new networks are detected
-- **Persistent network counter** tracks all tested networks
-- **Structured session logging** for audit trails
+- **Auto-trigger scans** immediately when eth0 gets IP address
+- **Real-time progress display** visible on dashboard without interaction
+- **Network-specific metrics** with Current/Historical tracking (CPT/HPT format)
+- **Persistent data** across reconnections to same network
+
+### 📊 **Live Dashboard** 
+- **50/50 Split Layout**: System Stats | Ethernet Status
+- **Real-time Metrics**: Hosts, Ports, Vulnerabilities (Current vs Historical)
+- **Live Progress Bar**: Shows scan progress even when page loads mid-scan
+- **Phase Indicators**: Visual 4-phase progress with active animations
+- **Network Blocking Detection**: Alerts when network filtering detected
 
 ### 🎯 **4-Phase Penetration Testing Workflow**
 
-#### **Phase 1: Network Detection & Initialization**
-- Interface detection and IP acquisition
-- Network range calculation
+#### **Phase 1: Network Detection & Initialization** (10% - 20%)
+- Interface detection (`ip link show eth0`)
+- IP acquisition and subnet calculation
 - Gateway and DNS enumeration
 - RFC1918 classification
-- Network tally increment
+- Network metrics initialization
 
-#### **Phase 2: Host Discovery**
-- `nmap -sn` ping sweep
-- `arp-scan --localnet` MAC enumeration
-- Live host identification
-- Device fingerprinting
+#### **Phase 2: Host Discovery** (20% - 40%)
+- `nmap -sn` ping sweep across subnet
+- Live host identification  
+- Host count tracking and metrics update
 
-#### **Phase 3: Service Enumeration**
+#### **Phase 3: Service Enumeration** (40% - 70%)
+- TCP connect scans (`nmap -sT -T4 --top-ports 100 -Pn`)
+- Service version detection (`nmap -sV -sC -Pn`)
+- Port discovery and cataloging
+- Per-host metrics tracking
+
+#### **Phase 4: Vulnerability Assessment** (70% - 100%)
+- Web vulnerability scanning (`nikto -maxtime 30`)
+- SMB enumeration (`enum4linux` if available)
+- SNMP discovery (`onesixtyone`)
+- SSL/TLS assessment (`sslscan`)
+- Vulnerability counting and historical tracking
 - TCP SYN scan (`nmap -sS -T4`)
 - Service version detection (`nmap -sV -sC`)
 - UDP top ports scan (`nmap -sU`)
@@ -62,39 +79,48 @@ A high-performance, always-running Ethernet penetration testing web interface de
 - **Raspberry Pi 3+ compatible** with performance optimizations
 - **Mobile-responsive** interface
 
-## 📦 Quick Installation
+## 📦 Installation
 
-### **One-Command Install**
+### **Quick Install (Recommended)**
 ```bash
+# Clone the repository
 git clone https://github.com/Rosso-OmniForge/Oblirim.git
 cd Oblirim
+
+# Run installation script
 chmod +x install.sh
 ./install.sh
+
+# Reboot after installation
+sudo reboot
 ```
 
-### **What the installer does:**
-1. ✅ Updates system packages
-2. ✅ Installs Python 3.9+ and dependencies
-3. ✅ Installs penetration testing tools (nmap, nikto, etc.)
-4. ✅ Creates virtual environment
-5. ✅ Configures systemd service for auto-start
-6. ✅ Sets up Ethernet detection daemon
-7. ✅ Creates utility scripts
-8. ✅ Configures firewall rules
-9. ✅ **Ready after reboot!**
+### **What Gets Installed**
+1. ✅ System dependencies (Python 3, pip, git, etc.)
+2. ✅ Python virtual environment
+3. ✅ Flask + SocketIO web framework
+4. ✅ **Penetration testing tools** (nmap, nikto, sslscan, etc.)
+5. ✅ Systemd service for auto-start
+6. ✅ Configures autostart on boot
+7. ✅ **Ready after reboot!**
 
 ### **Penetration Testing Tools Installed**
-- `nmap` - Network scanner
-- `arp-scan` - ARP-based host discovery
-- `nikto` - Web vulnerability scanner
-- `dirb` - Web content scanner
+- `nmap` - Network scanner ⭐ **REQUIRED**
+- `nikto` - Web vulnerability scanner ⭐ **REQUIRED**
 - `sslscan` - SSL/TLS configuration analyzer
-- `enum4linux` - SMB enumeration
-- `snmp` / `onesixtyone` - SNMP scanners
-- `hydra` - Network login cracker
-- `aircrack-ng` - WiFi security tools
-- `tcpdump` - Packet analyzer
-- And more...
+- `onesixtyone` - SNMP scanner
+- `nbtscan` - NetBIOS scanner
+- `snmp` - SNMP tools
+- `dirb` - Web content scanner
+- `masscan` - Ultra-fast port scanner
+- _(enum4linux and snmp-check unavailable in default repos)_
+
+### **Manual Tool Installation**
+If tools are missing after install:
+```bash
+sudo apt-get update
+sudo apt-get install -y nmap nikto sslscan onesixtyone nbtscan snmp
+```
 
 ## 🎯 System Requirements
 
@@ -120,19 +146,50 @@ chmod +x install.sh
 
 ## 🖥️ Usage
 
-### **Access the Dashboard**
-After installation and reboot:
-- **Local access**: http://localhost:5000
-- **Network access**: http://YOUR_PI_IP:5000
-- **Mobile optimized**: Works on any device with a browser
+### **Automatic Operation (HDMI Display)**
+The system is designed for **hands-free operation**:
+
+1. **Power on Raspberry Pi** with HDMI display connected
+2. **Wait ~30 seconds** for boot and service start
+3. **Connect Ethernet cable** to target network (eth0)
+4. **Dashboard auto-opens** in Chromium (kiosk mode)
+5. **Scan auto-starts** when IP is assigned
+6. **Progress visible** immediately on dashboard
+7. **Metrics update** in real-time (CPT/HPT format)
+
+### **Manual Access**
+- **Local**: http://localhost:5000
+- **Network**: http://YOUR_PI_IP:5000  
+- **Android/Mobile**: Connect via network and browse to Pi IP
+
+### **Understanding the Dashboard**
+
+**Left Panel - System Stats:**
+- Pi Model, IP Address, CPU, Memory, Disk
+- Network interface statuses (eth0, wlan0, wlan1, BT)
+- Temperature monitoring
+
+**Right Panel - Ethernet Status:**
+- Connection state and network info
+- **Current scan progress** with phase indicators
+- **Metrics in CPT/HPT format:**
+  - `Hosts: 10/45` = Current 10, Historical Total 45
+  - `Ports: 23/187` = Current 23, Historical Total 187
+  - `Vulns: 3/28` = Current 3, Historical Total 28
+- Network blocking detection alerts
 
 ### **Control Scripts**
 ```bash
-./start.sh      # Start the dashboard and detector
+./launch.sh     # Start the dashboard (manual mode)
 ./stop.sh       # Stop all services
 ./restart.sh    # Restart the dashboard
-./status.sh     # Check status and view logs
 ```
+
+### **ETH Tab Features**
+- Full scan progress with 4-phase breakdown
+- Detailed metrics with historical comparison
+- Real-time log viewer (auto-scrolling)
+- Per-network session tracking
 
 ### **Dashboard Tabs**
 - **DASH** - System statistics and connection status

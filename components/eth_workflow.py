@@ -10,12 +10,14 @@ import os
 import json
 from datetime import datetime
 from components.tab_logger import tab_logger
+from components.network_metrics import network_metrics
 
 class EthernetWorkflow:
     def __init__(self):
         self.is_running = False
         self.stop_requested = False
         self.current_session = None
+        self.current_network = None
         self.progress_callbacks = []
         self.data_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data')
         self.tools_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'tools')
@@ -156,6 +158,10 @@ class EthernetWorkflow:
                 host_count = sum(1 for line in lines if 'Nmap scan report for' in line)
                 tab_logger.log_phase('eth', self.current_session, 2, f"nmap -sn completed", f"{host_count} hosts found")
                 print(f"   ✓ Found {host_count} active hosts")
+                
+                # Update metrics
+                if self.current_network:
+                    network_metrics.update_current_session(self.current_network, hosts=host_count)
             
             # Skip arp-scan - requires root privileges
             self.notify_progress('phase2', 70, "Skipping arp-scan (requires root)...")
@@ -176,6 +182,7 @@ class EthernetWorkflow:
         try:
             total_hosts = len(target_hosts) if target_hosts else 3
             completed = 0
+            total_ports = 0
             
             for host in target_hosts[:3]:  # Limit to 3 hosts
                 self.notify_progress('phase3', 30 + (completed / total_hosts) * 50, f"Scanning {host}...")
@@ -184,8 +191,13 @@ class EthernetWorkflow:
                 # Also add -Pn to skip ping (host may block ICMP)
                 success, output, error = self.run_command(f"nmap -sT -T4 --top-ports 100 -Pn {host}", timeout=60)
                 if success:
-                    open_ports = output.count('open')
+                    open_ports = output.count(' open ')
+                    total_ports += open_ports
                     tab_logger.log_event('eth', self.current_session, f'Port Scan {host}', f"{open_ports} ports open")
+                    
+                    # Update metrics
+                    if self.current_network and open_ports > 0:
+                        network_metrics.update_current_session(self.current_network, ports=open_ports, device=host)
                 
                 # Service version detection - also with -Pn
                 success, output, error = self.run_command(f"nmap -sV -sC -Pn {host}", timeout=120)
@@ -198,7 +210,8 @@ class EthernetWorkflow:
                 
                 completed += 1
             
-            self.notify_progress('phase3', 80, "Phase 3 completed: Service enumeration finished")
+            print(f"   ✓ Total ports found: {total_ports}")
+            self.notify_progress('phase3', 80, f"Phase 3 completed: {total_ports} ports found")
             return True
             
         except Exception as e:
@@ -218,31 +231,45 @@ class EthernetWorkflow:
             for host in target_hosts[:3]:  # Limit for demo
                 self.notify_progress('phase4', 50 + (completed / total) * 40, f"Vulnerability scanning {host}...")
                 
-                # HTTP scanning - reduced timeout to 60 seconds
-                success, output, error = self.run_command(f"nikto -h {host} -Tuning 123 -maxtime 60", timeout=90)
-                if success and 'vulnerabilities found' in output.lower():
+                # HTTP scanning - reduced timeout to 30 seconds
+                success, output, error = self.run_command(f"nikto -h {host} -Tuning 123 -maxtime 30", timeout=45)
+                if success and ('vulnerabilities found' in output.lower() or 'OSVDB' in output):
                     vuln_count = output.count('OSVDB')  # Rough count
                     vulnerabilities_found += vuln_count
                     tab_logger.log_phase('eth', self.current_session, 4, f"nikto scan on {host}", f"{vuln_count} vulnerabilities found")
+                    
+                    # Update metrics
+                    if self.current_network and vuln_count > 0:
+                        network_metrics.update_current_session(self.current_network, vulnerabilities=vuln_count)
                 elif not success and 'not found' in error:
                     tab_logger.log_event('eth', self.current_session, f'Nikto {host}', "Skipped (tool not installed)")
+                elif not success and 'No web server found' in output:
+                    tab_logger.log_event('eth', self.current_session, f'Nikto {host}', "No web server on host")
+                elif not success:
+                    tab_logger.log_event('eth', self.current_session, f'Nikto {host}', "Scan timeout or error")
                 
                 # SMB scanning - only if tool exists
-                success, output, error = self.run_command(f"enum4linux -a {host}", timeout=60)
-                if success:
-                    tab_logger.log_event('eth', self.current_session, f'SMB Enum {host}', "SMB enumeration completed")
-                elif not success and 'not found' in error:
-                    tab_logger.log_event('eth', self.current_session, f'SMB Enum {host}', "Skipped (enum4linux not installed)")
+                tool_check, _, _ = self.run_command("which enum4linux", log_output=False)
+                if tool_check:
+                    success, output, error = self.run_command(f"enum4linux -a {host}", timeout=60)
+                    if success:
+                        tab_logger.log_event('eth', self.current_session, f'SMB Enum {host}', "SMB enumeration completed")
+                    elif not success and 'not found' in error:
+                        tab_logger.log_event('eth', self.current_session, f'SMB Enum {host}', "Skipped (enum4linux not installed)")
+                else:
+                    # enum4linux not installed, skip silently
+                    pass
                 
-                # SNMP scanning - only if tool exists
-                success, output, error = self.run_command(f"snmp-check {host}", timeout=30)
-                if success:
-                    tab_logger.log_event('eth', self.current_session, f'SNMP Check {host}', "SNMP enumeration completed")
+                # SNMP scanning - use onesixtyone instead of snmp-check
+                success, output, error = self.run_command(f"onesixtyone -c /usr/share/doc/onesixtyone/dict.txt {host}", timeout=15)
+                if success and output:
+                    tab_logger.log_event('eth', self.current_session, f'SNMP Check {host}', "SNMP scan completed")
                 elif not success and 'not found' in error:
-                    tab_logger.log_event('eth', self.current_session, f'SNMP Check {host}', "Skipped (snmp-check not installed)")
+                    tab_logger.log_event('eth', self.current_session, f'SNMP Check {host}', "Skipped (onesixtyone not installed)")
                 
                 completed += 1
             
+            print(f"   ✓ Total vulnerabilities found: {vulnerabilities_found}")
             self.notify_progress('phase4', 100, f"Phase 4 completed: {vulnerabilities_found} vulnerabilities found")
             return True
             
@@ -269,6 +296,21 @@ class EthernetWorkflow:
             print(f"📋 Session: {self.current_session}")
             print(f"🌐 Network: {network_str}")
             
+            # Calculate network range from IP
+            network_range = "192.168.1.0/24"  # Fallback default
+            if network_info.get('subnet'):
+                subnet_parts = network_info['subnet'].split('/')
+                if len(subnet_parts) == 2:
+                    ip_addr = subnet_parts[0]
+                    cidr = subnet_parts[1]
+                    ip_parts = ip_addr.split('.')
+                    if len(ip_parts) == 4:
+                        network_range = f"{ip_parts[0]}.{ip_parts[1]}.{ip_parts[2]}.0/{cidr}"
+            
+            # Store current network and initialize metrics
+            self.current_network = network_range
+            network_metrics.init_network(network_range)
+            
             self.notify_progress('start', 0, f"Starting Ethernet workflow for {network_str}")
             
             # Verify tools
@@ -285,21 +327,6 @@ class EthernetWorkflow:
                 print("❌ Phase 1 failed")
                 return False
             print("✓ Phase 1 complete")
-            
-            # Calculate network range for scanning from actual IP
-            network_range = "192.168.1.0/24"  # Fallback default
-            discovered_hosts = []
-            
-            if network_info.get('subnet'):
-                # Parse the subnet properly
-                subnet_parts = network_info['subnet'].split('/')
-                if len(subnet_parts) == 2:
-                    ip_addr = subnet_parts[0]
-                    cidr = subnet_parts[1]
-                    # Calculate network base from IP
-                    ip_parts = ip_addr.split('.')
-                    if len(ip_parts) == 4:
-                        network_range = f"{ip_parts[0]}.{ip_parts[1]}.{ip_parts[2]}.0/{cidr}"
             
             print(f"🎯 Target network range: {network_range}")
             
@@ -349,6 +376,16 @@ class EthernetWorkflow:
             print(f"\n{'='*60}")
             print(f"✅ WORKFLOW COMPLETE")
             print(f"{'='*60}\n")
+            
+            # Finalize metrics - move current to historical
+            if self.current_network:
+                network_metrics.finalize_session(self.current_network)
+                metrics = network_metrics.get_network_metrics(self.current_network)
+                print(f"📊 Session Metrics:")
+                print(f"   Hosts: {metrics['current']['hosts']} (Historical: {metrics['historical']['hosts']})")
+                print(f"   Ports: {metrics['current']['ports']} (Historical: {metrics['historical']['ports']})")
+                print(f"   Vulnerabilities: {metrics['current']['vulnerabilities']} (Historical: {metrics['historical']['vulnerabilities']})")
+            
             summary = f"Workflow completed: {len(sample_hosts)} hosts scanned"
             tab_logger.log_completion('eth', self.current_session, summary)
             self.notify_progress('complete', 100, summary)
@@ -365,6 +402,7 @@ class EthernetWorkflow:
             self.is_running = False
             self.stop_requested = False
             self.current_session = None
+            self.current_network = None
             # Emit idle state
             self.notify_progress('idle', 0, 'Workflow complete - System idle')
     
