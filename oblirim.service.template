@@ -27,3 +27,33 @@ WantedBy=multi-user.target
 # 3. Run: sudo systemctl daemon-reload
 # 4. Run: sudo systemctl enable oblirim
 # 5. Run: sudo systemctl start oblirim
+
+# ============================================================================
+# OBLIRIM Kiosk Mode Service (Midori Browser)
+# This file shows what the install script will create at /etc/systemd/system/oblirim-kiosk.service
+# ============================================================================
+
+# The install script also creates a kiosk service that:
+# 1. Waits for the main OBLIRIM service to be ready
+# 2. Launches Midori browser in fullscreen kiosk mode
+# 3. Disables mouse and keyboard input for security
+# 4. Automatically opens http://localhost:5000
+#
+# Kiosk Service File: /etc/systemd/system/oblirim-kiosk.service
+# Kiosk Startup Script: /path/to/oblirim/start-kiosk.sh
+#
+# The kiosk service includes:
+# - Automatic startup after graphical.target
+# - Dependencies on oblirim.service (main dashboard)
+# - Screen blanking disabled
+# - Mouse cursor hidden with unclutter
+# - Full-screen Midori browser with no UI elements
+# - Disabled mouse/keyboard input for kiosk security
+#
+# To regain control when kiosk mode is running:
+# SSH into the Raspberry Pi and run:
+#   sudo systemctl stop oblirim-kiosk
+#
+# Display Configuration:
+# The install script also configures /boot/firmware/config.txt to rotate
+# the display 90 degrees by adding/updating: display_rotate=1

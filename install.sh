@@ -129,6 +129,9 @@ install_dependencies() {
         "net-tools"
         "iproute2"
         "iptables"
+        "midori"
+        "unclutter"
+        "xdotool"
     )
     
     print_info "Installing essential packages..."
@@ -308,6 +311,45 @@ setup_project() {
     echo
 }
 
+# Configure display rotation for Raspberry Pi
+configure_display() {
+    print_header "Display Configuration"
+    
+    # Check if we're on a Raspberry Pi
+    if [ -f /boot/firmware/config.txt ]; then
+        print_info "Configuring display rotation (90 degrees)..."
+        
+        # Check if display_rotate is already set
+        if grep -q "^display_rotate=" /boot/firmware/config.txt; then
+            print_warning "Display rotation already configured in config.txt"
+            # Update existing value
+            sudo sed -i 's/^display_rotate=.*/display_rotate=1/' /boot/firmware/config.txt
+            print_success "Updated display_rotate=1 in /boot/firmware/config.txt"
+        else
+            # Add display_rotate to [all] section or at the end
+            if grep -q "^\[all\]" /boot/firmware/config.txt; then
+                # Insert after [all] section
+                sudo sed -i '/^\[all\]/a display_rotate=1' /boot/firmware/config.txt
+                print_success "Added display_rotate=1 to [all] section"
+            else
+                # Add [all] section with display_rotate
+                echo "" | sudo tee -a /boot/firmware/config.txt > /dev/null
+                echo "[all]" | sudo tee -a /boot/firmware/config.txt > /dev/null
+                echo "display_rotate=1" | sudo tee -a /boot/firmware/config.txt > /dev/null
+                print_success "Added [all] section with display_rotate=1"
+            fi
+        fi
+        
+        print_warning "Display rotation requires a reboot to take effect"
+    else
+        print_warning "Not a Raspberry Pi or /boot/firmware/config.txt not found"
+        print_info "Skipping display rotation configuration"
+    fi
+    
+    print_success "Display configuration completed"
+    echo
+}
+
 # Configure system services
 configure_services() {
     print_header "Service Configuration"
@@ -387,6 +429,107 @@ EOF
     print_info "  Status:  sudo systemctl status $SERVICE_NAME"
     print_info "  Logs:    sudo journalctl -u $SERVICE_NAME -f"
     print_info "  Disable: sudo systemctl disable $SERVICE_NAME"
+    echo
+}
+
+# Create Midori kiosk systemd service
+create_midori_kiosk_service() {
+    print_header "Kiosk Mode Configuration"
+    
+    PROJECT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+    SERVICE_NAME="oblirim-kiosk"
+    SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
+    
+    print_info "Creating Midori kiosk service..."
+    
+    # Create kiosk startup script
+    KIOSK_SCRIPT="${PROJECT_DIR}/start-kiosk.sh"
+    cat > "$KIOSK_SCRIPT" << 'EOF'
+#!/bin/bash
+# OBLIRIM Kiosk Mode Startup Script
+
+# Wait for X server to be ready
+sleep 5
+
+# Hide mouse cursor
+unclutter -idle 0 -root &
+
+# Disable screen blanking and power management
+xset s off
+xset -dpms
+xset s noblank
+
+# Wait for the web server to be fully ready
+echo "Waiting for OBLIRIM dashboard to be ready..."
+for i in {1..30}; do
+    if curl -s http://localhost:5000 > /dev/null 2>&1; then
+        echo "Dashboard is ready!"
+        break
+    fi
+    echo "Waiting... ($i/30)"
+    sleep 2
+done
+
+# Launch Midori in kiosk mode
+midori -e Fullscreen -a http://localhost:5000 &
+MIDORI_PID=$!
+
+# Disable keyboard and mouse input after Midori starts
+sleep 3
+xinput list | grep -i mouse | grep -o 'id=[0-9]*' | cut -d= -f2 | while read id; do
+    xinput disable $id 2>/dev/null || true
+done
+xinput list | grep -i keyboard | grep -o 'id=[0-9]*' | cut -d= -f2 | while read id; do
+    # Don't disable the main keyboard (usually id 3), only additional ones
+    if [ "$id" -gt 5 ]; then
+        xinput disable $id 2>/dev/null || true
+    fi
+done
+
+# Keep script running
+wait $MIDORI_PID
+EOF
+
+    chmod +x "$KIOSK_SCRIPT"
+    
+    # Create systemd service file
+    sudo tee "$SERVICE_FILE" > /dev/null << EOF
+[Unit]
+Description=OBLIRIM Kiosk Mode (Midori Browser)
+After=oblirim.service graphical.target
+Wants=graphical.target
+Requires=oblirim.service
+
+[Service]
+Type=simple
+User=${USER}
+Environment=DISPLAY=:0
+Environment=XAUTHORITY=/home/${USER}/.Xauthority
+ExecStart=${KIOSK_SCRIPT}
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=graphical.target
+EOF
+
+    # Set permissions and enable service
+    sudo chmod 644 "$SERVICE_FILE"
+    sudo systemctl daemon-reload
+    sudo systemctl enable "$SERVICE_NAME"
+    
+    print_success "Midori kiosk service created: /etc/systemd/system/oblirim-kiosk.service"
+    print_success "Kiosk mode enabled for auto-start"
+    print_info "Kiosk control commands:"
+    print_info "  Start:   sudo systemctl start $SERVICE_NAME"
+    print_info "  Stop:    sudo systemctl stop $SERVICE_NAME"
+    print_info "  Restart: sudo systemctl restart $SERVICE_NAME"
+    print_info "  Status:  sudo systemctl status $SERVICE_NAME"
+    print_info "  Disable: sudo systemctl disable $SERVICE_NAME"
+    print_warning "Note: Kiosk mode will disable mouse/keyboard input for security"
+    print_info "To regain control: SSH into the Pi and run 'sudo systemctl stop oblirim-kiosk'"
     echo
 }
 
@@ -527,8 +670,10 @@ main() {
     install_dependencies
     install_pentest_tools
     setup_project
+    configure_display
     configure_services
     create_systemd_service
+    create_midori_kiosk_service
     create_scripts
     configure_network
     final_setup
