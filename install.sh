@@ -129,9 +129,6 @@ install_dependencies() {
         "net-tools"
         "iproute2"
         "iptables"
-        "chromium"
-        "unclutter"
-        "xdotool"
     )
     
     print_info "Installing essential packages..."
@@ -360,6 +357,62 @@ configure_services() {
         sudo systemctl enable bluetooth
         sudo systemctl start bluetooth
         print_success "Bluetooth service configured"
+        
+        # Configure Bluetooth PAN (Personal Area Network)
+        print_info "Configuring Bluetooth PAN for Web UI access..."
+        
+        # Create NAP (Network Access Point) configuration
+        # This allows devices to connect via Bluetooth and access the network
+        if [ -f /etc/bluetooth/main.conf ]; then
+            # Ensure PAN is enabled in bluetooth config
+            if ! grep -q "^Class = 0x020300" /etc/bluetooth/main.conf; then
+                print_info "Adding Bluetooth PAN class configuration..."
+                echo "" | sudo tee -a /etc/bluetooth/main.conf > /dev/null
+                echo "# Bluetooth PAN Configuration for OBLIRIM" | sudo tee -a /etc/bluetooth/main.conf > /dev/null
+                echo "Class = 0x020300" | sudo tee -a /etc/bluetooth/main.conf > /dev/null
+            fi
+            
+            # Enable discoverable mode by default
+            if ! grep -q "^DiscoverableTimeout = 0" /etc/bluetooth/main.conf; then
+                echo "DiscoverableTimeout = 0" | sudo tee -a /etc/bluetooth/main.conf > /dev/null
+                print_info "Bluetooth set to always discoverable"
+            fi
+        fi
+        
+        # Create Bluetooth PAN network configuration script
+        BT_PAN_SCRIPT="/usr/local/bin/setup-bt-pan.sh"
+        sudo tee "$BT_PAN_SCRIPT" > /dev/null << 'BTPANEOF'
+#!/bin/bash
+# Bluetooth PAN Network Setup for OBLIRIM
+# This script sets up the bnep0 interface when Bluetooth PAN connects
+
+INTERFACE="bnep0"
+IP_ADDRESS="10.0.0.1"
+NETMASK="255.255.255.0"
+
+# Wait for interface to appear
+if [ -d "/sys/class/net/$INTERFACE" ]; then
+    # Configure the interface
+    ip addr add ${IP_ADDRESS}/${NETMASK} dev $INTERFACE
+    ip link set $INTERFACE up
+    
+    # Enable IP forwarding for internet sharing (optional)
+    echo 1 > /proc/sys/net/ipv4/ip_forward
+    
+    echo "Bluetooth PAN interface $INTERFACE configured: $IP_ADDRESS"
+fi
+BTPANEOF
+        
+        sudo chmod +x "$BT_PAN_SCRIPT"
+        print_success "Bluetooth PAN configuration script created"
+        
+        print_info "Bluetooth PAN setup completed"
+        print_warning "To connect via Bluetooth PAN:"
+        print_info "  1. Pair your device with the Raspberry Pi"
+        print_info "  2. Connect to Bluetooth PAN network"
+        print_info "  3. Access Web UI at http://10.0.0.1:5000"
+    else
+        print_warning "Bluetooth service not available"
     fi
     
     # Configure SSH (optional)
@@ -432,87 +485,41 @@ EOF
     echo
 }
 
-# Create Chromium kiosk systemd service
-create_chromium_kiosk_service() {
-    print_header "Kiosk Mode Configuration"
+# Create Textual TUI systemd service for HDMI display
+create_tui_service() {
+    print_header "TUI Display Configuration"
     
     PROJECT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-    SERVICE_NAME="oblirim-kiosk"
+    SERVICE_NAME="oblirim-tui"
     SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
     
-    print_info "Creating Chromium kiosk service..."
-    
-    # Create kiosk startup script
-    KIOSK_SCRIPT="${PROJECT_DIR}/start-kiosk.sh"
-    cat > "$KIOSK_SCRIPT" << 'EOF'
-#!/bin/bash
-# OBLIRIM Kiosk Mode Startup Script
-
-# Wait for X server to be ready
-sleep 5
-
-# Hide mouse cursor
-unclutter -idle 0 -root &
-
-# Disable screen blanking and power management
-xset s off
-xset -dpms
-xset s noblank
-
-# Wait for the web server to be fully ready
-echo "Waiting for OBLIRIM dashboard to be ready..."
-for i in {1..30}; do
-    if curl -s http://localhost:5000 > /dev/null 2>&1; then
-        echo "Dashboard is ready!"
-        break
-    fi
-    echo "Waiting... ($i/30)"
-    sleep 2
-done
-
-# Launch Chromium in kiosk mode
-chromium --kiosk --noerrdialogs --disable-infobars --disable-session-crashed-bubble --disable-restore-session-state --disable-features=TranslateUI --disable-component-update --start-fullscreen --incognito http://localhost:5000 &
-CHROMIUM_PID=$!
-
-# Disable keyboard and mouse input after Chromium starts
-sleep 3
-xinput list | grep -i mouse | grep -o 'id=[0-9]*' | cut -d= -f2 | while read id; do
-    xinput disable $id 2>/dev/null || true
-done
-xinput list | grep -i keyboard | grep -o 'id=[0-9]*' | cut -d= -f2 | while read id; do
-    # Don't disable the main keyboard (usually id 3), only additional ones
-    if [ "$id" -gt 5 ]; then
-        xinput disable $id 2>/dev/null || true
-    fi
-done
-
-# Keep script running
-wait $CHROMIUM_PID
-EOF
-
-    chmod +x "$KIOSK_SCRIPT"
+    print_info "Creating Textual TUI service for HDMI display..."
     
     # Create systemd service file
     sudo tee "$SERVICE_FILE" > /dev/null << EOF
 [Unit]
-Description=OBLIRIM Kiosk Mode (Chromium Browser)
-After=oblirim.service graphical.target
-Wants=graphical.target
+Description=OBLIRIM TUI Display (Textual Interface on HDMI)
+After=oblirim.service
 Requires=oblirim.service
 
 [Service]
 Type=simple
 User=${USER}
-Environment=DISPLAY=:0
-Environment=XAUTHORITY=/home/${USER}/.Xauthority
-ExecStart=${KIOSK_SCRIPT}
+Group=${USER}
+WorkingDirectory=${PROJECT_DIR}
+Environment=PATH=${PROJECT_DIR}/.venv/bin
+Environment=TERM=xterm-256color
+StandardInput=tty
+StandardOutput=tty
+TTY=/dev/tty1
+# Wait for the main server to be ready before starting TUI
+ExecStartPre=/bin/bash -c 'until curl -sf http://localhost:5000 > /dev/null; do sleep 1; done'
+ExecStart=${PROJECT_DIR}/.venv/bin/python ${PROJECT_DIR}/tui_app.py
 Restart=always
 RestartSec=10
-StandardOutput=journal
-StandardError=journal
 
 [Install]
-WantedBy=graphical.target
+WantedBy=multi-user.target
 EOF
 
     # Set permissions and enable service
@@ -520,16 +527,17 @@ EOF
     sudo systemctl daemon-reload
     sudo systemctl enable "$SERVICE_NAME"
     
-    print_success "Chromium kiosk service created: /etc/systemd/system/oblirim-kiosk.service"
-    print_success "Kiosk mode enabled for auto-start"
-    print_info "Kiosk control commands:"
+    print_success "Textual TUI service created: /etc/systemd/system/oblirim-tui.service"
+    print_success "TUI display enabled for auto-start on tty1"
+    print_success "TUI will wait for main server to be ready before starting"
+    print_info "TUI control commands:"
     print_info "  Start:   sudo systemctl start $SERVICE_NAME"
     print_info "  Stop:    sudo systemctl stop $SERVICE_NAME"
     print_info "  Restart: sudo systemctl restart $SERVICE_NAME"
     print_info "  Status:  sudo systemctl status $SERVICE_NAME"
     print_info "  Disable: sudo systemctl disable $SERVICE_NAME"
-    print_warning "Note: Kiosk mode will disable mouse/keyboard input for security"
-    print_info "To regain control: SSH into the Pi and run 'sudo systemctl stop oblirim-kiosk'"
+    print_info "Note: The TUI will display on tty1 (main console on HDMI)"
+    print_info "To access console: Switch to tty2-6 with Ctrl+Alt+F2-F6"
     echo
 }
 
@@ -594,14 +602,49 @@ configure_network() {
     LOCAL_IP=$(hostname -I | awk '{print $1}')
     print_info "Local IP address: $LOCAL_IP"
     
-    # Configure firewall if ufw is available
-    if command -v ufw >/dev/null 2>&1; then
-        print_info "Configuring firewall for port 5000..."
-        sudo ufw allow 5000/tcp comment "OBLIRIM Dashboard"
-        print_success "Firewall configured"
+    # Configure firewall rules to restrict Web UI to Bluetooth PAN only
+    print_info "Configuring firewall rules for Bluetooth PAN access..."
+    
+    # First, block access to port 5000 from all interfaces except localhost and bnep0
+    # This ensures Web UI is only accessible via Bluetooth PAN
+    
+    # Allow localhost access (for TUI)
+    sudo iptables -I INPUT -i lo -p tcp --dport 5000 -j ACCEPT
+    
+    # Allow Bluetooth PAN interface (bnep0) - if/when it exists
+    sudo iptables -I INPUT -i bnep0 -p tcp --dport 5000 -j ACCEPT
+    
+    # Drop all other connections to port 5000
+    sudo iptables -A INPUT -p tcp --dport 5000 -j DROP
+    
+    # Save iptables rules to persist across reboots
+    if command -v netfilter-persistent >/dev/null 2>&1; then
+        sudo netfilter-persistent save
+        print_success "Firewall rules saved with netfilter-persistent"
+    elif [ -f /etc/debian_version ]; then
+        # Debian/Ubuntu/Raspbian - install iptables-persistent
+        print_info "Installing iptables-persistent to save rules..."
+        sudo DEBIAN_FRONTEND=noninteractive apt-get install -y iptables-persistent
+        sudo netfilter-persistent save
+        print_success "Firewall rules saved"
+    else
+        # Fallback - use iptables-save
+        sudo iptables-save | sudo tee /etc/iptables/rules.v4 > /dev/null
+        print_warning "Firewall rules saved, but may need manual restoration after reboot"
     fi
     
-    print_success "Network configuration completed"
+    print_success "Firewall configured:"
+    print_info "  ✓ Port 5000 accessible via localhost (for TUI)"
+    print_info "  ✓ Port 5000 accessible via Bluetooth PAN (bnep0)"
+    print_info "  ✗ Port 5000 blocked from Ethernet and WiFi interfaces"
+    
+    # Configure UFW if available (but iptables rules take precedence)
+    if command -v ufw >/dev/null 2>&1; then
+        print_warning "UFW detected - note that iptables rules above take precedence"
+        print_info "Recommend: sudo ufw disable (to avoid conflicts)"
+    fi
+    
+    print_success "Network security configuration completed"
     echo
 }
 
@@ -673,7 +716,7 @@ main() {
     configure_display
     configure_services
     create_systemd_service
-    create_chromium_kiosk_service
+    create_tui_service
     create_scripts
     configure_network
     final_setup

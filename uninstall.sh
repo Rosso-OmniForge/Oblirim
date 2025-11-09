@@ -66,7 +66,16 @@ check_root() {
 stop_services() {
     print_header "Stopping Services"
     
-    # Stop kiosk service
+    # Stop TUI service
+    if systemctl is-active --quiet oblirim-tui 2>/dev/null; then
+        print_info "Stopping TUI service..."
+        sudo systemctl stop oblirim-tui
+        print_success "TUI service stopped"
+    else
+        print_info "TUI service not running"
+    fi
+    
+    # Stop kiosk service (legacy)
     if systemctl is-active --quiet oblirim-kiosk 2>/dev/null; then
         print_info "Stopping kiosk service..."
         sudo systemctl stop oblirim-kiosk
@@ -92,7 +101,16 @@ stop_services() {
 disable_services() {
     print_header "Disabling Auto-Start"
     
-    # Disable kiosk service
+    # Disable TUI service
+    if systemctl list-unit-files | grep -q "oblirim-tui.service"; then
+        print_info "Disabling TUI auto-start..."
+        sudo systemctl disable oblirim-tui
+        print_success "TUI auto-start disabled"
+    else
+        print_info "TUI service not found"
+    fi
+    
+    # Disable kiosk service (legacy)
     if systemctl list-unit-files | grep -q "oblirim-kiosk.service"; then
         print_info "Disabling kiosk auto-start..."
         sudo systemctl disable oblirim-kiosk
@@ -118,7 +136,16 @@ disable_services() {
 remove_services() {
     print_header "Removing Service Files"
     
-    # Remove kiosk service file
+    # Remove TUI service file
+    if [ -f /etc/systemd/system/oblirim-tui.service ]; then
+        print_info "Removing TUI service file..."
+        sudo rm /etc/systemd/system/oblirim-tui.service
+        print_success "TUI service file removed"
+    else
+        print_info "TUI service file not found"
+    fi
+    
+    # Remove kiosk service file (legacy)
     if [ -f /etc/systemd/system/oblirim-kiosk.service ]; then
         print_info "Removing kiosk service file..."
         sudo rm /etc/systemd/system/oblirim-kiosk.service
@@ -188,14 +215,39 @@ remove_utility_scripts() {
 remove_firewall_rules() {
     print_header "Removing Firewall Rules"
     
-    if command -v ufw >/dev/null 2>&1; then
-        print_info "Removing firewall rule for port 5000..."
-        sudo ufw delete allow 5000/tcp 2>/dev/null || print_info "Firewall rule not found"
-        print_success "Firewall rules cleaned up"
+    # Remove iptables rules for port 5000
+    print_info "Removing iptables rules for port 5000..."
+    
+    # Remove specific rules added by install script
+    sudo iptables -D INPUT -i lo -p tcp --dport 5000 -j ACCEPT 2>/dev/null || true
+    sudo iptables -D INPUT -i bnep0 -p tcp --dport 5000 -j ACCEPT 2>/dev/null || true
+    sudo iptables -D INPUT -p tcp --dport 5000 -j DROP 2>/dev/null || true
+    
+    # Save iptables rules
+    if command -v netfilter-persistent >/dev/null 2>&1; then
+        sudo netfilter-persistent save
+        print_success "Firewall rules removed and saved"
+    elif [ -f /etc/iptables/rules.v4 ]; then
+        sudo iptables-save | sudo tee /etc/iptables/rules.v4 > /dev/null
+        print_success "Firewall rules removed and saved"
     else
-        print_info "UFW not installed, skipping firewall cleanup"
+        print_warning "Firewall rules removed but may not persist after reboot"
     fi
     
+    # Also remove UFW rule if it exists
+    if command -v ufw >/dev/null 2>&1; then
+        print_info "Removing UFW firewall rule for port 5000..."
+        sudo ufw delete allow 5000/tcp 2>/dev/null || print_info "UFW rule not found"
+    fi
+    
+    # Remove Bluetooth PAN setup script
+    if [ -f /usr/local/bin/setup-bt-pan.sh ]; then
+        print_info "Removing Bluetooth PAN setup script..."
+        sudo rm /usr/local/bin/setup-bt-pan.sh
+        print_success "Bluetooth PAN script removed"
+    fi
+    
+    print_success "Firewall rules and network configuration cleaned up"
     echo
 }
 
