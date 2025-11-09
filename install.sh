@@ -129,7 +129,7 @@ install_dependencies() {
         "net-tools"
         "iproute2"
         "iptables"
-        "midori"
+        "chromium-browser"
         "unclutter"
         "xdotool"
     )
@@ -432,15 +432,15 @@ EOF
     echo
 }
 
-# Create Midori kiosk systemd service
-create_midori_kiosk_service() {
+# Create Chromium kiosk systemd service
+create_chromium_kiosk_service() {
     print_header "Kiosk Mode Configuration"
     
     PROJECT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
     SERVICE_NAME="oblirim-kiosk"
     SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
     
-    print_info "Creating Midori kiosk service..."
+    print_info "Creating Chromium kiosk service..."
     
     # Create kiosk startup script
     KIOSK_SCRIPT="${PROJECT_DIR}/start-kiosk.sh"
@@ -470,11 +470,11 @@ for i in {1..30}; do
     sleep 2
 done
 
-# Launch Midori in kiosk mode
-midori -e Fullscreen -a http://localhost:5000 &
-MIDORI_PID=$!
+# Launch Chromium in kiosk mode
+chromium-browser --kiosk --noerrdialogs --disable-infobars --disable-session-crashed-bubble --disable-restore-session-state --disable-features=TranslateUI --disable-component-update --start-fullscreen --incognito http://localhost:5000 &
+CHROMIUM_PID=$!
 
-# Disable keyboard and mouse input after Midori starts
+# Disable keyboard and mouse input after Chromium starts
 sleep 3
 xinput list | grep -i mouse | grep -o 'id=[0-9]*' | cut -d= -f2 | while read id; do
     xinput disable $id 2>/dev/null || true
@@ -487,7 +487,7 @@ xinput list | grep -i keyboard | grep -o 'id=[0-9]*' | cut -d= -f2 | while read 
 done
 
 # Keep script running
-wait $MIDORI_PID
+wait $CHROMIUM_PID
 EOF
 
     chmod +x "$KIOSK_SCRIPT"
@@ -495,7 +495,7 @@ EOF
     # Create systemd service file
     sudo tee "$SERVICE_FILE" > /dev/null << EOF
 [Unit]
-Description=OBLIRIM Kiosk Mode (Midori Browser)
+Description=OBLIRIM Kiosk Mode (Chromium Browser)
 After=oblirim.service graphical.target
 Wants=graphical.target
 Requires=oblirim.service
@@ -520,7 +520,7 @@ EOF
     sudo systemctl daemon-reload
     sudo systemctl enable "$SERVICE_NAME"
     
-    print_success "Midori kiosk service created: /etc/systemd/system/oblirim-kiosk.service"
+    print_success "Chromium kiosk service created: /etc/systemd/system/oblirim-kiosk.service"
     print_success "Kiosk mode enabled for auto-start"
     print_info "Kiosk control commands:"
     print_info "  Start:   sudo systemctl start $SERVICE_NAME"
@@ -673,7 +673,7 @@ main() {
     configure_display
     configure_services
     create_systemd_service
-    create_midori_kiosk_service
+    create_chromium_kiosk_service
     create_scripts
     configure_network
     final_setup
