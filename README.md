@@ -1,28 +1,41 @@
 # OBLIRIM - Ethernet Penetration Testing Interface
 
 **⚠️ FOR TESTING ONLY - NOT A FUCKING TOY ⚠️**
+**⚠️ DO NOT RUN ON PRODUCTION NETWORKS! - THIS TOOL IS NOT /Delicate/ ⚠️**
 **Currently in Active Development @ OMNIFORGE**
 **Progress Report: 18% of Phase 1 Completed**
+**NOV 9 - 23:39 - Overhaul on Scope -  Further expansion of Tools and Toolset Included in Planning Strategy**
+'''
+scope expanded to further advance wireless testing
+including bluetooth capture
 
-A high-performance, always-running Ethernet penetration testing web interface designed for Raspberry Pi. Features automatic network detection, structured logging, comprehensive 4-phase vulnerability assessment workflow, and real-time progress tracking with historical metrics.
+app development will also begin design phase,
+as a companion tool for the raspberry pi via PAN.
 
-## 🚀 Key Features
+Further details to follow soon
+'''
 
-### 🔍 **Auto-Detection & Auto-Scan**
+
+
+A high-performance, always-running penetration testing and information gathering tool designed for Raspberry Pi. Featuring automatic network orchestration, structured logging, comprehensive 4-phase vulnerability assessment workflow, and real-time progress tracking with historical metrics.
+
+##  Key Features
+
+###  **Auto-Detection & Auto-Scan**
 - **Automatic Ethernet monitoring** via background daemon
 - **Auto-trigger scans** immediately when eth0 gets IP address
 - **Real-time progress display** visible on dashboard without interaction
 - **Network-specific metrics** with Current/Historical tracking (CPT/HPT format)
 - **Persistent data** across reconnections to same network
 
-### 📊 **Live Dashboard** 
+###  **Live Dashboard** 
 - **50/50 Split Layout**: System Stats | Ethernet Status
 - **Real-time Metrics**: Hosts, Ports, Vulnerabilities (Current vs Historical)
 - **Live Progress Bar**: Shows scan progress even when page loads mid-scan
 - **Phase Indicators**: Visual 4-phase progress with active animations
 - **Network Blocking Detection**: Alerts when network filtering detected
 
-### 🎯 **4-Phase Penetration Testing Workflow**
+###  **4-Phase Penetration Testing Workflow**
 
 #### **Phase 1: Network Detection & Initialization** (10% - 20%)
 - Interface detection (`ip link show eth0`)
@@ -61,27 +74,27 @@ A high-performance, always-running Ethernet penetration testing web interface de
 - **FTP**: Anonymous access checks
 - Results parsed and logged to README
 
-### 📊 **Tab-Specific Logging**
+###  **Tab-Specific Logging**
 - **Markdown-formatted logs** in `/logs/eth/README.md`
 - **Session IDs**: `YYYY-MM-DD_HH:MM_[network]`
 - **Phase tracking** with timestamps
 - **Vulnerability summaries** with severity ratings
 - **Full scan output** preservation
 
-### 🖥️ **Real-Time Dashboard**
+###  **Real-Time Dashboard**
 - **Live progress bars** for scan phases
 - **Connection status** with IP/gateway info
 - **Device counters**: hosts, ports, vulnerabilities
 - **Console log streaming** via WebSocket
 - **Expandable host cards** (planned)
 
-### 🎨 **Optimized Design**
+###  **Optimized Design**
 - **Lightweight hacker theme** (green/cyan terminal aesthetic)
 - **Portrait-optimized** for 1080x1920 touchscreen displays
 - **Raspberry Pi 3+ compatible** with performance optimizations
 - **Mobile-responsive** interface
 
-## 📦 Installation
+##  Installation
 
 ### **Quick Install (Recommended)**
 ```bash
@@ -98,17 +111,17 @@ sudo reboot
 ```
 
 ### **What Gets Installed**
-1. ✅ System dependencies (Python 3, pip, git, etc.)
-2. ✅ Python virtual environment
-3. ✅ Flask + SocketIO web framework
-4. ✅ **Penetration testing tools** (nmap, nikto, sslscan, etc.)
-5. ✅ Systemd service for auto-start
-6. ✅ Configures autostart on boot
-7. ✅ **Ready after reboot!**
+1.  System dependencies (Python 3, pip, git, etc.)
+2.  Python virtual environment
+3.  Flask + SocketIO web framework
+4.  **Penetration testing tools** (nmap, nikto, sslscan, etc.)
+5.  Systemd service for auto-start
+6.  Configures autostart on boot
+7.  **Ready after reboot!**
 
 ### **Penetration Testing Tools Installed**
-- `nmap` - Network scanner ⭐ **REQUIRED**
-- `nikto` - Web vulnerability scanner ⭐ **REQUIRED**
+- `nmap` - Network scanner  **REQUIRED**
+- `nikto` - Web vulnerability scanner  **REQUIRED**
 - `sslscan` - SSL/TLS configuration analyzer
 - `onesixtyone` - SNMP scanner
 - `nbtscan` - NetBIOS scanner
@@ -124,7 +137,7 @@ sudo apt-get update
 sudo apt-get install -y nmap nikto sslscan onesixtyone nbtscan snmp
 ```
 
-## 🎯 System Requirements
+##  System Requirements
 
 ### **Minimum Requirements**
 - **Raspberry Pi 3B+** or newer (Pi 4/5 recommended)
@@ -135,10 +148,10 @@ sudo apt-get install -y nmap nikto sslscan onesixtyone nbtscan snmp
 - **Ethernet connection** (eth0)
 
 ### **Tested Systems**
-- ✅ Raspberry Pi 5 (8GB) - Bookworm
-- ✅ Raspberry Pi 4B (4GB) - Bookworm  
-- ✅ Raspberry Pi 3B+ (1GB) - Bookworm
-- ✅ Generic Linux x86_64 - Ubuntu/Debian
+-  Raspberry Pi 5 (8GB) - Bookworm
+-  Raspberry Pi 4B (4GB) - Bookworm  
+-  Raspberry Pi 3B+ (1GB) - Bookworm
+-  Generic Linux x86_64 - Ubuntu/Debian
 
 ### **Network Requirements**
 - **Ethernet (eth0)** for target network scanning
@@ -208,7 +221,7 @@ The system is designed for **hands-free operation**:
 5. **Log Viewer** - Recent scan results and session logs
 6. **Device Statistics** - Hosts found, open ports, vulnerabilities
 
-## 🔧 Manual Installation
+##  Manual Installation
 
 If you prefer to install manually:
 
@@ -244,7 +257,7 @@ python app.py
 ./install.sh
 ```
 
-## 📁 Project Structure
+##  Project Structure
 
 ```
 oblirim/
@@ -269,7 +282,7 @@ oblirim/
 └── README.md                   # This file
 ```
 
-## 🔧 Configuration
+##  Configuration
 
 ### **Data Directory**
 The `data/` folder contains:
@@ -309,7 +322,7 @@ sudo systemctl status oblirim
 sudo journalctl -u oblirim -f
 ```
 
-## 🚨 Troubleshooting
+##  Troubleshooting
 
 ### **Installation Issues**
 ```bash
@@ -379,7 +392,7 @@ nmap --version
 - **Memory issues**: Restart the service: `./restart.sh`
 - **Scan timeouts**: Check network connectivity to target
 
-## ⚖️ Legal & Ethical Use
+##  Legal & Ethical Use
 
 ### **⚠️ IMPORTANT DISCLAIMER**
 
@@ -399,13 +412,15 @@ This tool is designed for **authorized security testing ONLY**. Use of this soft
 ✅ **Educational purposes** in controlled lab environments  
 ✅ **Bug bounty programs** within their scope  
 
-❌ **Scanning networks without permission**  
-❌ **Attacking production systems**  
-❌ **Port scanning public IPs without authorization**  
+❌ **DO NOT** ❌ **Scanning networks without permission**  
+❌ **DO NOT** ❌  **Attacking production systems**  
+❌ **DO NOT** ❌  **Port scanning public IPs without authorization**  
 
-**The developers assume NO responsibility for misuse of this software.**
+❌ **The developers assume NO responsibility for misuse of this software.** ❌
+❌ **This Tool is Purely Designed to TEST YOUR OWN NETWORK - Dont be a Fool** ❌
 
-## 🔄 Updates
+
+##  Updates
 
 ### **Update Application**
 ```bash
@@ -422,7 +437,7 @@ sudo apt update && sudo apt upgrade -y
 sudo reboot
 ```
 
-## 🗑️ Uninstallation
+##  Uninstallation
 
 ```bash
 ./uninstall.sh
@@ -434,7 +449,7 @@ This will:
 - Clean up system configuration
 - Preserve logs (optional)
 
-## 🤝 Contributing
+##  Contributing
 
 ### **Development Setup**
 ```bash
@@ -483,7 +498,7 @@ To add new scan phases:
 - Rate limiting to prevent Pi overload
 - Logs preserved for audit trails
 
-## 📚 Resources
+##  Resources
 
 ### **Documentation**
 - [NMAP Documentation](https://nmap.org/book/man.html)
@@ -495,19 +510,19 @@ To add new scan phases:
 - OpenVAS - Vulnerability scanner
 - Metasploit Framework - Exploitation framework
 
-## 📜 License
+##  License
 
 This project is provided for educational and authorized security testing purposes only.
 
 **MIT License** - See LICENSE file for details.
 
-## 🆘 Support
+##  Support
 
 - **Issues**: Report bugs via [GitHub Issues](https://github.com/Rosso-OmniForge/Oblirim/issues)
 - **Documentation**: Check this README
 - **Logs**: Use `./status.sh` for diagnostics
 
-## 🙏 Credits
+##  Credits
 
 Built with:
 - Flask & SocketIO for real-time web interface
@@ -518,5 +533,5 @@ Built with:
 ---
 
 **OBLIRIM** - Ethernet Penetration Testing Interface  
-🔐 For authorized security testing on Raspberry Pi  
-⚠️ **Use responsibly. Test only authorized networks.**
+ For authorized security testing on Raspberry Pi  
+ **Use responsibly. Test only authorized networks.**
