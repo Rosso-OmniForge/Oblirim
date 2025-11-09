@@ -129,7 +129,7 @@ install_dependencies() {
         "net-tools"
         "iproute2"
         "iptables"
-        "chromium-browser"
+        "chromium"
         "unclutter"
         "xdotool"
     )
@@ -471,7 +471,7 @@ for i in {1..30}; do
 done
 
 # Launch Chromium in kiosk mode
-chromium-browser --kiosk --noerrdialogs --disable-infobars --disable-session-crashed-bubble --disable-restore-session-state --disable-features=TranslateUI --disable-component-update --start-fullscreen --incognito http://localhost:5000 &
+chromium --kiosk --noerrdialogs --disable-infobars --disable-session-crashed-bubble --disable-restore-session-state --disable-features=TranslateUI --disable-component-update --start-fullscreen --incognito http://localhost:5000 &
 CHROMIUM_PID=$!
 
 # Disable keyboard and mouse input after Chromium starts

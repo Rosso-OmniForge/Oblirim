@@ -236,7 +236,7 @@ remove_packages() {
     
     # Packages to potentially remove
     PACKAGES=(
-        "chromium-browser"
+        "chromium"
         "unclutter"
         "xdotool"
         "nmap"
