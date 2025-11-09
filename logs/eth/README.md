@@ -836,3 +836,214 @@ Host is up (0.083s latency).
 All 100 scanned ports on 10.0.5.10 are in ignored states.
 Not shown: 90 fil... (2025-11-07 00:30:34)
 - **Port Scan 10.0.5.10:** 0 ports open (2025-11-07 00:30:34)
+- **Command Output:** nmap -sV -sC -Pn 10.0.5.10: Starting Nmap 7.95 ( https://nmap.org ) at 2025-11-07 00:30 SAST
+Nmap scan report for 10.0.5.10
+Host is up (0.10s latency).
+All 1000 scanned ports on 10.0.5.10 are in ignored states.
+Not shown: 990 fi... (2025-11-07 00:31:12)
+- **Service Scan 10.0.5.10:** Version detection completed (2025-11-07 00:31:12)
+- **UDP Scan 10.0.5.10:** Skipped (requires root) (2025-11-07 00:31:12)
+- **Command Output:** nmap -sT -T4 --top-ports 100 -Pn 10.0.5.20: Starting Nmap 7.95 ( https://nmap.org ) at 2025-11-07 00:31 SAST
+Nmap scan report for 10.0.5.20
+Host is up (0.014s latency).
+Not shown: 97 closed tcp ports (conn-refused)
+PORT     STATE SERVICE
+22/tcp... (2025-11-07 00:31:12)
+- **Port Scan 10.0.5.20:** 3 ports open (2025-11-07 00:31:12)
+- **Command Output:** nmap -sV -sC -Pn 10.0.5.20: Starting Nmap 7.95 ( https://nmap.org ) at 2025-11-07 00:31 SAST
+Nmap scan report for 10.0.5.20
+Host is up (0.0086s latency).
+Not shown: 994 closed tcp ports (conn-refused)
+PORT     STATE SERVICE    V... (2025-11-07 00:32:34)
+- **Service Scan 10.0.5.20:** Version detection completed (2025-11-07 00:32:34)
+- **UDP Scan 10.0.5.20:** Skipped (requires root) (2025-11-07 00:32:34)
+## Session: 2025-11-07_00-55-19_10-0-5-70-24
+- **Network:** 10.0.5.70/24
+- **Started:** 2025-11-07 00:55:19
+
+- **Tool Check:** Missing tools: enum4linux, smb-vuln-*, snmp-check - Install with install.sh (2025-11-07 00:55:19)
+- **Command Output:** ip link show eth0: 2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP mode DEFAULT group default qlen 1000
+    link/ether 88:a2:9e:2d:53:b4 brd ff:ff:ff:ff:ff:ff
+... (2025-11-07 00:55:19)
+- **Phase 1:** Interface detected → eth0 details logged (2025-11-07 00:55:19)
+- **Network Range:** 10.0.5.0/24 (2025-11-07 00:55:19)
+- **Network Classification:** RFC1918 Private Network (2025-11-07 00:55:19)
+- **Command Output:** nmap -sn 10.0.5.0/24: Starting Nmap 7.95 ( https://nmap.org ) at 2025-11-07 00:55 SAST
+Nmap scan report for _gateway (10.0.5.1)
+Host is up (0.012s latency).
+Nmap scan report for 10.0.5.20
+Host is up (0.094s latency).
+Nmap ... (2025-11-07 00:55:23)
+- **Phase 2:** nmap -sn completed → 9 hosts found (2025-11-07 00:55:23)
+- **ARP Scan:** Skipped (requires root privileges) (2025-11-07 00:55:23)
+- **Command Output:** nmap -sT -T4 --top-ports 100 -Pn 10.0.5.1: Starting Nmap 7.95 ( https://nmap.org ) at 2025-11-07 00:55 SAST
+Nmap scan report for _gateway (10.0.5.1)
+Host is up (0.015s latency).
+Not shown: 97 closed tcp ports (conn-refused)
+PORT    STATE SERVI... (2025-11-07 00:55:23)
+- **Port Scan 10.0.5.1:** 3 ports open (2025-11-07 00:55:23)
+## Session: 2025-11-07_00-55-33_10-0-5-70-24
+- **Network:** 10.0.5.70/24
+- **Started:** 2025-11-07 00:55:33
+
+- **Tool Check:** Missing tools: enum4linux, smb-vuln-*, snmp-check - Install with install.sh (2025-11-07 00:55:33)
+- **Command Output:** ip link show eth0: 2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP mode DEFAULT group default qlen 1000
+    link/ether 88:a2:9e:2d:53:b4 brd ff:ff:ff:ff:ff:ff
+... (2025-11-07 00:55:33)
+- **Phase 1:** Interface detected → eth0 details logged (2025-11-07 00:55:33)
+- **Network Range:** 10.0.5.0/24 (2025-11-07 00:55:33)
+- **Network Classification:** RFC1918 Private Network (2025-11-07 00:55:33)
+- **Command Output:** nmap -sn 10.0.5.0/24: Starting Nmap 7.95 ( https://nmap.org ) at 2025-11-07 00:55 SAST
+Nmap scan report for _gateway (10.0.5.1)
+Host is up (0.0068s latency).
+Nmap scan report for 10.0.5.20
+Host is up (0.033s latency).
+Nmap... (2025-11-07 00:55:50)
+- **Phase 2:** nmap -sn completed → 11 hosts found (2025-11-07 00:55:50)
+- **ARP Scan:** Skipped (requires root privileges) (2025-11-07 00:55:50)
+- **Command Output:** nmap -sT -T4 --top-ports 100 -Pn 10.0.5.1: Starting Nmap 7.95 ( https://nmap.org ) at 2025-11-07 00:55 SAST
+Nmap scan report for _gateway (10.0.5.1)
+Host is up (0.016s latency).
+Not shown: 97 closed tcp ports (conn-refused)
+PORT    STATE SERVI... (2025-11-07 00:55:50)
+- **Port Scan 10.0.5.1:** 3 ports open (2025-11-07 00:55:50)
+- **Command Output:** nmap -sV -sC -Pn 10.0.5.1: Starting Nmap 7.95 ( https://nmap.org ) at 2025-11-07 00:55 SAST
+Nmap scan report for _gateway (10.0.5.1)
+Host is up (0.019s latency).
+Not shown: 997 closed tcp ports (conn-refused)
+PORT    STATE SERV... (2025-11-07 00:55:56)
+- **Service Scan 10.0.5.1:** Version detection completed (2025-11-07 00:55:56)
+- **UDP Scan 10.0.5.1:** Skipped (requires root) (2025-11-07 00:55:56)
+- **Command Output:** nmap -sT -T4 --top-ports 100 -Pn 10.0.5.10: Starting Nmap 7.95 ( https://nmap.org ) at 2025-11-07 00:55 SAST
+Nmap scan report for 10.0.5.10
+Host is up (0.11s latency).
+All 100 scanned ports on 10.0.5.10 are in ignored states.
+Not shown: 90 filt... (2025-11-07 00:55:59)
+- **Port Scan 10.0.5.10:** 0 ports open (2025-11-07 00:55:59)
+- **Command Output:** nmap -sV -sC -Pn 10.0.5.1: Starting Nmap 7.95 ( https://nmap.org ) at 2025-11-07 00:55 SAST
+Nmap scan report for _gateway (10.0.5.1)
+Host is up (0.014s latency).
+Not shown: 997 closed tcp ports (conn-refused)
+PORT    STATE SERV... (2025-11-07 00:56:19)
+- **Service Scan 10.0.5.1:** Version detection completed (2025-11-07 00:56:19)
+- **UDP Scan 10.0.5.1:** Skipped (requires root) (2025-11-07 00:56:19)
+- **Command Output:** nmap -sT -T4 --top-ports 100 -Pn 10.0.5.10: Starting Nmap 7.95 ( https://nmap.org ) at 2025-11-07 00:56 SAST
+Nmap scan report for 10.0.5.10
+Host is up.
+All 100 scanned ports on 10.0.5.10 are in ignored states.
+Not shown: 100 filtered tcp ports ... (2025-11-07 00:56:30)
+- **Port Scan 10.0.5.10:** 0 ports open (2025-11-07 00:56:30)
+- **Command Output:** nmap -sV -sC -Pn 10.0.5.10: Starting Nmap 7.95 ( https://nmap.org ) at 2025-11-07 00:55 SAST
+Nmap scan report for 10.0.5.10
+Host is up (0.054s latency).
+All 1000 scanned ports on 10.0.5.10 are in ignored states.
+Not shown: 990 f... (2025-11-07 00:56:30)
+- **Service Scan 10.0.5.10:** Version detection completed (2025-11-07 00:56:30)
+- **UDP Scan 10.0.5.10:** Skipped (requires root) (2025-11-07 00:56:30)
+- **Command Output:** nmap -sT -T4 --top-ports 100 -Pn 10.0.5.20: Starting Nmap 7.95 ( https://nmap.org ) at 2025-11-07 00:56 SAST
+Nmap scan report for 10.0.5.20
+Host is up (0.0080s latency).
+Not shown: 97 closed tcp ports (conn-refused)
+PORT     STATE SERVICE
+22/tc... (2025-11-07 00:56:31)
+- **Port Scan 10.0.5.20:** 3 ports open (2025-11-07 00:56:31)
+- **Command Output:** nmap -sV -sC -Pn 10.0.5.10: Starting Nmap 7.95 ( https://nmap.org ) at 2025-11-07 00:56 SAST
+Nmap scan report for 10.0.5.10
+Host is up (0.084s latency).
+All 1000 scanned ports on 10.0.5.10 are in ignored states.
+Not shown: 990 f... (2025-11-07 00:56:43)
+- **Service Scan 10.0.5.10:** Version detection completed (2025-11-07 00:56:43)
+- **UDP Scan 10.0.5.10:** Skipped (requires root) (2025-11-07 00:56:43)
+- **Command Output:** nmap -sT -T4 --top-ports 100 -Pn 10.0.5.20: Starting Nmap 7.95 ( https://nmap.org ) at 2025-11-07 00:56 SAST
+Nmap scan report for 10.0.5.20
+Host is up (0.025s latency).
+Not shown: 97 closed tcp ports (conn-refused)
+PORT     STATE SERVICE
+22/tcp... (2025-11-07 00:56:43)
+- **Port Scan 10.0.5.20:** 3 ports open (2025-11-07 00:56:43)
+- **Command Output:** nmap -sV -sC -Pn 10.0.5.20: Starting Nmap 7.95 ( https://nmap.org ) at 2025-11-07 00:56 SAST
+Nmap scan report for 10.0.5.20
+Host is up (0.024s latency).
+Not shown: 994 closed tcp ports (conn-refused)
+PORT     STATE SERVICE    VE... (2025-11-07 00:57:52)
+- **Service Scan 10.0.5.20:** Version detection completed (2025-11-07 00:57:52)
+- **UDP Scan 10.0.5.20:** Skipped (requires root) (2025-11-07 00:57:52)
+- **Command Output:** nikto -h 10.0.5.1 -Tuning 123 -maxtime 30: - Nikto v2.1.5
+---------------------------------------------------------------------------
++ Target IP:          10.0.5.1
++ Target Hostname:    _gateway
++ Target Port:        80
++ Start Time:         ... (2025-11-07 00:57:53)
+- **ERROR:** nikto -h 10.0.5.1 -Tuning 123 -maxtime 30: + ERROR: Host maximum execution time of 30 seconds reached
+ (2025-11-07 00:57:53)
+- **Phase 4:** nikto scan on 10.0.5.1 → 1 vulnerabilities found (2025-11-07 00:57:53)
+- **Command Output:** onesixtyone -c /usr/share/doc/onesixtyone/dict.txt 10.0.5.1: Scanning 1 hosts, 50 communities
+... (2025-11-07 00:57:58)
+- **SNMP Check 10.0.5.1:** SNMP scan completed (2025-11-07 00:57:58)
+- **Command Output:** nmap -sV -sC -Pn 10.0.5.20: Starting Nmap 7.95 ( https://nmap.org ) at 2025-11-07 00:56 SAST
+Nmap scan report for 10.0.5.20
+Host is up (0.014s latency).
+Not shown: 994 closed tcp ports (conn-refused)
+PORT     STATE SERVICE    VE... (2025-11-07 00:58:14)
+- **Service Scan 10.0.5.20:** Version detection completed (2025-11-07 00:58:14)
+- **UDP Scan 10.0.5.20:** Skipped (requires root) (2025-11-07 00:58:14)
+- **Command Output:** nikto -h 10.0.5.1 -Tuning 123 -maxtime 30: - Nikto v2.1.5
+---------------------------------------------------------------------------
++ Target IP:          10.0.5.1
++ Target Hostname:    _gateway
++ Target Port:        80
++ Start Time:         ... (2025-11-07 00:58:15)
+- **ERROR:** nikto -h 10.0.5.1 -Tuning 123 -maxtime 30: + ERROR: Host maximum execution time of 30 seconds reached
+ (2025-11-07 00:58:15)
+- **Phase 4:** nikto scan on 10.0.5.1 → 1 vulnerabilities found (2025-11-07 00:58:15)
+- **Command Output:** onesixtyone -c /usr/share/doc/onesixtyone/dict.txt 10.0.5.1: Scanning 1 hosts, 50 communities
+... (2025-11-07 00:58:20)
+- **SNMP Check 10.0.5.1:** SNMP scan completed (2025-11-07 00:58:20)
+- **Command Output:** nikto -h 10.0.5.10 -Tuning 123 -maxtime 30: - Nikto v2.1.5
+---------------------------------------------------------------------------
++ No web server found on 10.0.5.10:80
+-----------------------------------------------------------------------... (2025-11-07 00:58:23)
+- **ERROR:** nikto -h 10.0.5.10 -Tuning 123 -maxtime 30: + ERROR: Host maximum execution time of 30 seconds reached
++ ERROR: Host maximum execution time of 30 seconds reached
++ ERROR: Host maximum execution time of 30 seconds reached
++ ERROR: Host maximum execution time of 30 seconds reached
+ (2025-11-07 00:58:23)
+- **Command Output:** onesixtyone -c /usr/share/doc/onesixtyone/dict.txt 10.0.5.10: Scanning 1 hosts, 50 communities
+... (2025-11-07 00:58:29)
+- **SNMP Check 10.0.5.10:** SNMP scan completed (2025-11-07 00:58:29)
+- **Command Output:** nikto -h 10.0.5.10 -Tuning 123 -maxtime 30: - Nikto v2.1.5
+---------------------------------------------------------------------------
++ No web server found on 10.0.5.10:80
+-----------------------------------------------------------------------... (2025-11-07 00:58:45)
+- **ERROR:** nikto -h 10.0.5.10 -Tuning 123 -maxtime 30: + ERROR: Host maximum execution time of 30 seconds reached
++ ERROR: Host maximum execution time of 30 seconds reached
++ ERROR: Host maximum execution time of 30 seconds reached
++ ERROR: Host maximum execution time of 30 seconds reached
+ (2025-11-07 00:58:45)
+- **Command Output:** onesixtyone -c /usr/share/doc/onesixtyone/dict.txt 10.0.5.10: Scanning 1 hosts, 50 communities
+... (2025-11-07 00:58:50)
+- **SNMP Check 10.0.5.10:** SNMP scan completed (2025-11-07 00:58:50)
+- **Command Output:** nikto -h 10.0.5.20 -Tuning 123 -maxtime 30: - Nikto v2.1.5
+---------------------------------------------------------------------------
++ Target IP:          10.0.5.20
++ Target Hostname:    10.0.5.20
++ Target Port:        80
++ Start Time:       ... (2025-11-07 00:59:11)
+- **ERROR:** nikto -h 10.0.5.20 -Tuning 123 -maxtime 30: + ERROR: Host maximum execution time of 30 seconds reached
++ ERROR: Host maximum execution time of 30 seconds reached
++ ERROR: Host maximum execution time of 30 seconds reached
+ (2025-11-07 00:59:11)
+- **Command Output:** onesixtyone -c /usr/share/doc/onesixtyone/dict.txt 10.0.5.20: Scanning 1 hosts, 50 communities
+... (2025-11-07 00:59:17)
+- **SNMP Check 10.0.5.20:** SNMP scan completed (2025-11-07 00:59:17)
+- **Completed:** 2025-11-07 00:59:17
+- **Summary:** Workflow completed: 6 hosts scanned
+
+---
+
+- **SNMP Check 10.0.5.20:** SNMP scan completed (2025-11-07 00:59:38)
+- **Completed:** 2025-11-07 00:59:38
+- **Summary:** Workflow completed: 6 hosts scanned
+
+---
+

@@ -72,31 +72,73 @@ def get_system_info():
             except:
                 pass
 
-        # Check network interfaces
+        # Check network interfaces - more robust detection
         wlan0_state = wlan1_state = eth0_state = "Down"
         bt_state = "N/A"
 
+        def check_interface(interface_name):
+            """Check if interface exists and is up using multiple methods"""
+            try:
+                # Method 1: Check operstate file (most reliable)
+                operstate_path = f'/sys/class/net/{interface_name}/operstate'
+                if os.path.exists(operstate_path):
+                    with open(operstate_path, 'r') as f:
+                        state = f.read().strip()
+                        # 'up' or 'unknown' (unknown can mean up on some systems)
+                        if state in ['up', 'unknown']:
+                            return "Up"
+                
+                # Method 2: Check if interface exists and has carrier
+                carrier_path = f'/sys/class/net/{interface_name}/carrier'
+                if os.path.exists(carrier_path):
+                    try:
+                        with open(carrier_path, 'r') as f:
+                            if f.read().strip() == '1':
+                                return "Up"
+                    except:
+                        pass  # Carrier file not readable if interface is down
+                
+                # Method 3: Use ip link show (fallback)
+                result = subprocess.run(['ip', 'link', 'show', interface_name], 
+                                      capture_output=True, text=True, timeout=2)
+                if result.returncode == 0:
+                    output = result.stdout
+                    # Check for UP state (interface enabled) and optionally LOWER_UP (link detected)
+                    if 'state UP' in output or '<UP,' in output:
+                        return "Up"
+                
+                return "Down"
+            except Exception as e:
+                print(f"Error checking {interface_name}: {e}")
+                return "Down"
+
         try:
-            result = subprocess.run(['ip', 'link', 'show'], capture_output=True, text=True, timeout=5)
-            for line in result.stdout.splitlines():
-                if 'wlan0:' in line and 'UP' in line:
-                    wlan0_state = "Up"
-                if 'wlan1:' in line and 'UP' in line:
-                    wlan1_state = "Up"
-                if 'eth0:' in line and 'UP' in line:
-                    eth0_state = "Up"
+            wlan0_state = check_interface('wlan0')
+            wlan1_state = check_interface('wlan1')
+            eth0_state = check_interface('eth0')
         except Exception as e:
             print(f"Interface check error: {e}")
 
-        # Check Bluetooth
+        # Check Bluetooth - more robust detection
         try:
+            # Method 1: hciconfig
             result = subprocess.run(['hciconfig'], capture_output=True, text=True, timeout=3)
-            if result.returncode == 0 and 'UP RUNNING' in result.stdout:
-                bt_state = "Up"
-            elif result.returncode == 0:
-                bt_state = "Down"
-        except:
-            pass
+            if result.returncode == 0:
+                if 'UP RUNNING' in result.stdout:
+                    bt_state = "Up"
+                elif 'hci0' in result.stdout or 'hci1' in result.stdout:
+                    bt_state = "Down"
+            
+            # Method 2: Check via rfkill if hciconfig failed
+            if bt_state == "N/A":
+                result = subprocess.run(['rfkill', 'list', 'bluetooth'], 
+                                      capture_output=True, text=True, timeout=3)
+                if result.returncode == 0 and 'Soft blocked: no' in result.stdout:
+                    bt_state = "Up"
+                elif result.returncode == 0:
+                    bt_state = "Down"
+        except Exception as e:
+            print(f"Bluetooth check error: {e}")
 
         # Get temperature - try multiple paths for different Pi models
         temp = "N/A"

@@ -2,31 +2,27 @@
   "networks": {
     "10.0.5.0/24": {
       "first_seen": "2025-11-07T00:09:57.517668",
-      "last_scan": "2025-11-07T00:30:02.480069",
-      "scan_count": 2,
+      "last_scan": "2025-11-07T00:58:15.220929",
+      "scan_count": 3,
       "current_session": {
-        "hosts": 11,
-        "ports": 3,
+        "hosts": 0,
+        "ports": 0,
         "vulnerabilities": 0,
-        "devices": {
-          "10.0.5.1": {
-            "last_seen": "2025-11-07T00:30:02.480057"
-          }
-        }
+        "devices": {}
       },
       "historical": {
-        "total_hosts": 21,
-        "total_ports": 27,
-        "total_vulnerabilities": 2,
-        "total_scans": 2
+        "total_hosts": 32,
+        "total_ports": 45,
+        "total_vulnerabilities": 4,
+        "total_scans": 3
       }
     }
   },
   "global": {
     "total_networks_scanned": 1,
-    "total_hosts_found": 21,
-    "total_ports_found": 27,
-    "total_vulnerabilities": 2,
-    "last_updated": "2025-11-07T00:29:04.722442"
+    "total_hosts_found": 32,
+    "total_ports_found": 45,
+    "total_vulnerabilities": 4,
+    "last_updated": "2025-11-07T00:59:17.285011"
   }
 }

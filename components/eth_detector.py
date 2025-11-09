@@ -38,25 +38,66 @@ class EthernetDetector:
                 json.dump({'total_networks': 0, 'last_updated': datetime.now().isoformat()}, f)
 
     def get_eth0_state(self):
-        """Check if eth0 is connected using carrier file"""
+        """Check if eth0 is connected using multiple methods for reliability"""
         try:
-            with open('/sys/class/net/eth0/carrier', 'r') as f:
-                carrier = f.read().strip()
-                return carrier == '1'
-        except (FileNotFoundError, IOError):
+            # Method 1: Check carrier file (most direct)
+            carrier_path = '/sys/class/net/eth0/carrier'
+            if os.path.exists(carrier_path):
+                try:
+                    with open(carrier_path, 'r') as f:
+                        carrier = f.read().strip()
+                        if carrier == '1':
+                            return True
+                except (IOError, OSError):
+                    # Carrier file exists but can't read - interface might be down
+                    pass
+            
+            # Method 2: Check operstate file
+            operstate_path = '/sys/class/net/eth0/operstate'
+            if os.path.exists(operstate_path):
+                with open(operstate_path, 'r') as f:
+                    state = f.read().strip()
+                    # 'up' means connected, 'unknown' can also mean up on some systems
+                    if state == 'up':
+                        return True
+            
+            # Method 3: Use ip link show as fallback
+            result = subprocess.run(['ip', 'link', 'show', 'eth0'], 
+                                  capture_output=True, text=True, timeout=3)
+            if result.returncode == 0:
+                output = result.stdout
+                # Check for both UP (interface enabled) and LOWER_UP (link detected)
+                if 'state UP' in output or ('LOWER_UP' in output and '<UP,' in output):
+                    return True
+            
+            return False
+        except (FileNotFoundError, IOError, OSError) as e:
+            self.log(f"Error checking eth0 state: {e}")
             return False
 
     def get_eth0_info(self):
         """Get detailed eth0 interface information"""
         try:
+            # Try to get state from operstate file first (most reliable)
+            operstate_path = '/sys/class/net/eth0/operstate'
+            if os.path.exists(operstate_path):
+                with open(operstate_path, 'r') as f:
+                    state = f.read().strip()
+                    if state in ['up', 'unknown']:
+                        return {'state': 'up', 'interface': 'eth0'}
+                    else:
+                        return {'state': 'down', 'interface': 'eth0'}
+            
+            # Fallback to ip link show
             result = subprocess.run(['ip', 'link', 'show', 'eth0'], 
                                   capture_output=True, text=True, timeout=5)
             if result.returncode == 0:
                 lines = result.stdout.split('\n')
                 for line in lines:
-                    if 'eth0:' in line:
-                        # Extract state
-                        state = 'UP' in line and 'LOWER_UP' in line
+                    if 'eth0:' in line or '<' in line:
+                        # Extract state - check for UP and LOWER_UP
+                        state = ('UP' in line or 'state UP' in line) and \
+                               ('LOWER_UP' in line or 'state UP' in line)
                         return {
                             'state': 'up' if state else 'down',
                             'interface': 'eth0'

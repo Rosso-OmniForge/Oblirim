@@ -1,6 +1,8 @@
 # OBLIRIM - Ethernet Penetration Testing Interface
 
 **⚠️ FOR TESTING ONLY - NOT A FUCKING TOY ⚠️**
+**Currently in Active Development @ OMNIFORGE**
+**Progress Report: 18% of Phase 1 Completed**
 
 A high-performance, always-running Ethernet penetration testing web interface designed for Raspberry Pi. Features automatic network detection, structured logging, comprehensive 4-phase vulnerability assessment workflow, and real-time progress tracking with historical metrics.
 
