@@ -1047,3 +1047,63 @@ PORT     STATE SERVICE    VE... (2025-11-07 00:58:14)
 
 ---
 
+## Session: 2025-11-11_00-44-09_10-0-5-70-24
+- **Network:** 10.0.5.70/24
+- **Started:** 2025-11-11 00:44:09
+
+- **Tool Check:** Missing tools: enum4linux, smb-vuln-*, snmp-check - Install with install.sh (2025-11-11 00:44:09)
+- **Command Output:** ip link show eth0: 2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP mode DEFAULT group default qlen 1000
+    link/ether 88:a2:9e:2d:53:b4 brd ff:ff:ff:ff:ff:ff
+... (2025-11-11 00:44:09)
+- **Phase 1:** Interface detected → eth0 details logged (2025-11-11 00:44:09)
+- **Network Range:** 10.0.5.0/24 (2025-11-11 00:44:09)
+- **Network Classification:** RFC1918 Private Network (2025-11-11 00:44:09)
+- **Command Output:** nmap -sn 10.0.5.0/24: Starting Nmap 7.95 ( https://nmap.org ) at 2025-11-11 00:44 SAST
+Nmap scan report for _gateway (10.0.5.1)
+Host is up (0.0078s latency).
+Nmap scan report for 10.0.5.9
+Host is up (0.0024s latency).
+Nmap... (2025-11-11 00:44:12)
+- **Phase 2:** nmap -sn completed → 7 hosts found (2025-11-11 00:44:12)
+- **ARP Scan:** Skipped (requires root privileges) (2025-11-11 00:44:12)
+- **Command Output:** nmap -sT -T4 --top-ports 100 -Pn 10.0.5.1: Starting Nmap 7.95 ( https://nmap.org ) at 2025-11-11 00:44 SAST
+Nmap scan report for _gateway (10.0.5.1)
+Host is up (0.012s latency).
+Not shown: 97 closed tcp ports (conn-refused)
+PORT    STATE SERVI... (2025-11-11 00:44:12)
+- **Port Scan 10.0.5.1:** 3 ports open (2025-11-11 00:44:12)
+## Session: 2025-11-11_00-51-30_10-0-5-70-24
+- **Network:** 10.0.5.70/24
+- **Started:** 2025-11-11 00:51:30
+
+- **Tool Check:** Missing tools: enum4linux, smb-vuln-*, snmp-check - Install with install.sh (2025-11-11 00:51:30)
+- **Command Output:** ip link show eth0: 2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP mode DEFAULT group default qlen 1000
+    link/ether 88:a2:9e:2d:53:b4 brd ff:ff:ff:ff:ff:ff
+... (2025-11-11 00:51:30)
+- **Phase 1:** Interface detected → eth0 details logged (2025-11-11 00:51:30)
+- **Network Range:** 10.0.5.0/24 (2025-11-11 00:51:30)
+- **Network Classification:** RFC1918 Private Network (2025-11-11 00:51:30)
+- **Command Output:** nmap -sn 10.0.5.0/24: Starting Nmap 7.95 ( https://nmap.org ) at 2025-11-11 00:51 SAST
+Stats: 0:00:02 elapsed; 0 hosts completed (0 up), 256 undergoing Ping Scan
+Ping Scan Timing: About 75.98% done; ETC: 00:51 (0:00:01 rem... (2025-11-11 00:51:35)
+- **Phase 2:** nmap -sn completed → 8 hosts found (2025-11-11 00:51:35)
+- **ARP Scan:** Skipped (requires root privileges) (2025-11-11 00:51:35)
+- **Command Output:** nmap -sT -T4 --top-ports 100 -Pn 10.0.5.1: Starting Nmap 7.95 ( https://nmap.org ) at 2025-11-11 00:51 SAST
+Nmap scan report for _gateway (10.0.5.1)
+Host is up (0.012s latency).
+Not shown: 97 closed tcp ports (conn-refused)
+PORT    STATE SERVI... (2025-11-11 00:51:35)
+- **Port Scan 10.0.5.1:** 3 ports open (2025-11-11 00:51:35)
+- **Command Output:** nmap -sV -sC -Pn 10.0.5.1: Starting Nmap 7.95 ( https://nmap.org ) at 2025-11-11 00:51 SAST
+Nmap scan report for _gateway (10.0.5.1)
+Host is up (0.011s latency).
+Not shown: 997 closed tcp ports (conn-refused)
+PORT    STATE SERV... (2025-11-11 00:52:03)
+- **Service Scan 10.0.5.1:** Version detection completed (2025-11-11 00:52:03)
+- **UDP Scan 10.0.5.1:** Skipped (requires root) (2025-11-11 00:52:03)
+- **Command Output:** nmap -sT -T4 --top-ports 100 -Pn 10.0.5.10: Starting Nmap 7.95 ( https://nmap.org ) at 2025-11-11 00:52 SAST
+Nmap scan report for 10.0.5.10
+Host is up (0.10s latency).
+All 100 scanned ports on 10.0.5.10 are in ignored states.
+Not shown: 90 filt... (2025-11-11 00:52:07)
+- **Port Scan 10.0.5.10:** 0 ports open (2025-11-11 00:52:07)

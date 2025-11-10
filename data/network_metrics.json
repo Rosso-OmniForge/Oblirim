@@ -2,13 +2,17 @@
   "networks": {
     "10.0.5.0/24": {
       "first_seen": "2025-11-07T00:09:57.517668",
-      "last_scan": "2025-11-07T00:58:15.220929",
+      "last_scan": "2025-11-11T00:51:35.237848",
       "scan_count": 3,
       "current_session": {
-        "hosts": 0,
-        "ports": 0,
+        "hosts": 8,
+        "ports": 6,
         "vulnerabilities": 0,
-        "devices": {}
+        "devices": {
+          "10.0.5.1": {
+            "last_seen": "2025-11-11T00:51:35.237833"
+          }
+        }
       },
       "historical": {
         "total_hosts": 32,

@@ -51,25 +51,59 @@ fi
 
 # Check if Flask backend is running
 if ! curl -s http://localhost:5000 > /dev/null 2>&1; then
-    print_warning "Flask backend is not running"
+    print_warning "Flask backend is not running on port 5000"
     print_warning "The TUI requires the backend service to be running"
     echo ""
-    read -p "Start the backend service? (y/n) " -n 1 -r
+    echo -e "${CYAN}Options:${NC}"
+    echo "1. Start systemd service (if installed)"
+    echo "2. Start development server (./launch.sh)"
+    echo "3. Continue without backend (limited functionality)"
+    echo ""
+    read -p "Choose option (1-3): " -n 1 -r
     echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        print_warning "Starting backend service..."
-        sudo systemctl start oblirim
-        sleep 3
-        if curl -s http://localhost:5000 > /dev/null 2>&1; then
-            print_success "Backend service started"
-        else
-            print_error "Failed to start backend service"
-            echo -e "${YELLOW}Try: sudo systemctl start oblirim${NC}"
-            exit 1
-        fi
-    else
-        print_warning "Continuing without backend - some features may not work"
-    fi
+    case $REPLY in
+        1)
+            print_info "Starting systemd service..."
+            if systemctl list-unit-files | grep -q "oblirim.service"; then
+                sudo systemctl start oblirim
+                sleep 3
+                if curl -s http://localhost:5000 > /dev/null 2>&1; then
+                    print_success "Backend service started"
+                else
+                    print_error "Failed to start backend service"
+                    echo -e "${YELLOW}Try: sudo systemctl start oblirim${NC}"
+                    exit 1
+                fi
+            else
+                print_error "Systemd service not installed"
+                print_info "Run ./install.sh first or choose option 2"
+                exit 1
+            fi
+            ;;
+        2)
+            print_info "Starting development server..."
+            if [ -f "${SCRIPT_DIR}/launch.sh" ]; then
+                "${SCRIPT_DIR}/launch.sh" &
+                LAUNCH_PID=$!
+                print_info "Development server started (PID: $LAUNCH_PID)"
+                sleep 5
+                if curl -s http://localhost:5000 > /dev/null 2>&1; then
+                    print_success "Development server ready"
+                else
+                    print_warning "Development server may still be starting..."
+                fi
+            else
+                print_error "launch.sh not found"
+                exit 1
+            fi
+            ;;
+        3)
+            print_warning "Continuing without backend - some features may not work"
+            ;;
+        *)
+            print_warning "Invalid option, continuing without backend"
+            ;;
+    esac
 fi
 
 print_success "Starting OBLIRIM TUI..."
