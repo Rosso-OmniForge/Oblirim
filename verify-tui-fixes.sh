@@ -1,0 +1,1 @@
+testing/verify-tui-fixes.sh

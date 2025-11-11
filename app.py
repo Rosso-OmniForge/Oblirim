@@ -396,30 +396,17 @@ if __name__ == '__main__':
     # Start Ethernet detector
     eth_detector.start()
     
-    # Determine host to bind to
-    # Prefer Bluetooth PAN interface (bnep0) if available, otherwise bind to localhost
-    # This restricts web UI access to only Bluetooth PAN connections
-    bind_host = '127.0.0.1'  # Default to localhost (for TUI access)
-    bind_message = "localhost only (TUI access)"
+    # Bind to all interfaces for network accessibility
+    # This allows access from:
+    # - localhost (for TUI)
+    # - LAN (for remote management)
+    # - Bluetooth PAN (if configured)
+    bind_host = '0.0.0.0'
+    LOCAL_IP = socket.gethostbyname(socket.gethostname())
     
-    try:
-        # Check if Bluetooth PAN interface exists and is up
-        bnep_path = '/sys/class/net/bnep0/operstate'
-        if os.path.exists(bnep_path):
-            with open(bnep_path, 'r') as f:
-                if f.read().strip() == 'up':
-                    # Get bnep0 IP address
-                    import netifaces
-                    if 'bnep0' in netifaces.interfaces():
-                        addrs = netifaces.ifaddresses('bnep0')
-                        if netifaces.AF_INET in addrs:
-                            bind_host = addrs[netifaces.AF_INET][0]['addr']
-                            bind_message = f"Bluetooth PAN ({bind_host})"
-    except Exception as e:
-        print(f"Note: Bluetooth PAN interface not available, binding to localhost: {e}")
-    
-    print(f" Server starting on http://{bind_host}:5000")
-    print(f" Web UI accessible via: {bind_message}")
+    print(f" Server starting on http://0.0.0.0:5000")
+    print(f" Access locally: http://localhost:5000")
+    print(f" Access from network: http://{LOCAL_IP}:5000")
     print(" Dashboard ready!")
     print("\n" + "="*60 + "\n")
     

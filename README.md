@@ -5,6 +5,18 @@
 **Currently in Active Development @ OMNIFORGE**
 **Progress Report: 18% of Phase 1 Completed**
 **NOV 9 - 23:39 - Overhaul on Scope -  Further expansion of Tools and Toolset Included in Planning Strategy**
+
+**NOV 11 - TUI System Fixed** ✅
+- Fixed: Data now displays immediately on startup
+- Fixed: Exit with 'q' or Ctrl+C works properly
+- Fixed: Better error messages and user feedback
+- See `TUI_FIX_SUMMARY.md` for details
+
+**NOV 11 - Project Organization** 📁
+- All test scripts moved to `testing/` folder for cleaner structure
+- Common scripts symlinked in main directory for easy access
+- See `TESTING.md` for testing documentation
+
 '''
 scope expanded to further advance wireless testing
 including bluetooth capture

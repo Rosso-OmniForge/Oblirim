@@ -311,40 +311,49 @@ setup_project() {
 # Configure display rotation for Raspberry Pi
 configure_display() {
     print_header "Display Configuration"
-    
-    # Check if we're on a Raspberry Pi
+
     if [ -f /boot/firmware/config.txt ]; then
-        print_info "Configuring display rotation (90 degrees)..."
-        
-        # Check if display_rotate is already set
+        print_info "Configuring display rotation (90 degrees) in config.txt..."
         if grep -q "^display_rotate=" /boot/firmware/config.txt; then
-            print_warning "Display rotation already configured in config.txt"
-            # Update existing value
+            print_warning "display_rotate already present in config.txt"
             sudo sed -i 's/^display_rotate=.*/display_rotate=1/' /boot/firmware/config.txt
-            print_success "Updated display_rotate=1 in /boot/firmware/config.txt"
+            print_success "Updated display_rotate=1"
         else
-            # Add display_rotate to [all] section or at the end
             if grep -q "^\[all\]" /boot/firmware/config.txt; then
-                # Insert after [all] section
                 sudo sed -i '/^\[all\]/a display_rotate=1' /boot/firmware/config.txt
                 print_success "Added display_rotate=1 to [all] section"
             else
-                # Add [all] section with display_rotate
                 echo "" | sudo tee -a /boot/firmware/config.txt > /dev/null
                 echo "[all]" | sudo tee -a /boot/firmware/config.txt > /dev/null
                 echo "display_rotate=1" | sudo tee -a /boot/firmware/config.txt > /dev/null
-                print_success "Added [all] section with display_rotate=1"
+                print_success "Created [all] section with display_rotate=1"
             fi
         fi
-        
-        print_warning "Display rotation requires a reboot to take effect"
     else
-        print_warning "Not a Raspberry Pi or /boot/firmware/config.txt not found"
-        print_info "Skipping display rotation configuration"
+        print_warning "/boot/firmware/config.txt not found – skipping config.txt part"
     fi
-    
-    print_success "Display configuration completed"
-    echo
+
+    CMDLINE="/boot/firmware/cmdline.txt"
+    VIDEO_PARAM="video=HDMI-1:1920x1080@60,rotate=180"
+
+    if [ -f "$CMDLINE" ]; then
+        print_info "Adding '$VIDEO_PARAM' to $CMDLINE ..."
+        if grep -q "video=HDMI-1:" "$CMDLINE"; then
+            print_warning "A video=HDMI-1: parameter already exists – updating it"
+            # Replace any existing HDMI-1 video= line
+            sudo sed -i "s|video=HDMI-1:[^ ]*|$VIDEO_PARAM|g" "$CMDLINE"
+            print_success "Updated video parameter in $CMDLINE"
+        else
+            # Append at the end (ensure a space before the new param)
+            echo -n " $VIDEO_PARAM" | sudo tee -a "$CMDLINE" > /dev/null
+            print_success "Appended '$VIDEO_PARAM' to $CMDLINE"
+        fi
+        print_warning "Changes to cmdline.txt require a reboot to take effect"
+    else
+        print_warning "$CMDLINE not found – skipping cmdline.txt part"
+    fi
+
+    print_warning "Display rotation (both methods) requires a reboot to take effect"
 }
 
 # Configure system services
@@ -445,22 +454,41 @@ create_systemd_service() {
     
     print_info "Creating systemd service for auto-start..."
     
-    # Create service file
+    # Create service file with proper environment activation
     sudo tee "$SERVICE_FILE" > /dev/null << EOF
 [Unit]
 Description=OBLIRIM PWN Master Dashboard
-After=network.target network-online.target
+After=network-online.target
 Wants=network-online.target
+Requires=network-online.target
 
 [Service]
 Type=simple
 User=${USER}
 Group=${USER}
 WorkingDirectory=${PROJECT_DIR}
-Environment=PATH=${PROJECT_DIR}/.venv/bin
+Environment="PATH=${PROJECT_DIR}/.venv/bin:/usr/local/bin:/usr/bin:/bin"
+Environment="VIRTUAL_ENV=${PROJECT_DIR}/.venv"
+Environment="PYTHONPATH=${PROJECT_DIR}"
+
+# Ensure directories exist before starting
+ExecStartPre=/bin/mkdir -p ${PROJECT_DIR}/logs ${PROJECT_DIR}/data ${PROJECT_DIR}/memory
+ExecStartPre=/bin/mkdir -p ${PROJECT_DIR}/logs/eth ${PROJECT_DIR}/logs/wifi ${PROJECT_DIR}/logs/wireless
+ExecStartPre=/bin/bash -c '[ -f ${PROJECT_DIR}/data/network_tally.json ] || echo "{\"total_networks\": 0, \"last_updated\": null}" > ${PROJECT_DIR}/data/network_tally.json'
+
+# Verify virtual environment exists
+ExecStartPre=/bin/bash -c '[ -d ${PROJECT_DIR}/.venv ] || exit 1'
+
+# Start the application
 ExecStart=${PROJECT_DIR}/.venv/bin/python ${PROJECT_DIR}/app.py
+
+# Restart configuration
 Restart=always
 RestartSec=10
+StartLimitBurst=5
+StartLimitIntervalSec=120
+
+# Logging
 StandardOutput=journal
 StandardError=journal
 
@@ -473,7 +501,7 @@ EOF
     sudo systemctl daemon-reload
     sudo systemctl enable "$SERVICE_NAME"
     
-    print_success "Systemd service created: /etc/systemd/system/oblirim.service"
+    print_success "Systemd service created: /etc/systemd/system/${SERVICE_NAME}.service"
     print_success "Service enabled for auto-start on boot"
     print_info "Manual control commands:"
     print_info "  Start:   sudo systemctl start $SERVICE_NAME"
@@ -492,31 +520,69 @@ create_tui_service() {
     PROJECT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
     SERVICE_NAME="oblirim-tui"
     SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
+    HDMI_CHECK_SCRIPT="/usr/local/bin/check-hdmi.sh"
     
     print_info "Creating Textual TUI service for HDMI display..."
+    
+    # Install HDMI detection script
+    if [ -f "${PROJECT_DIR}/check-hdmi.sh" ]; then
+        sudo cp "${PROJECT_DIR}/check-hdmi.sh" "$HDMI_CHECK_SCRIPT"
+        sudo chmod +x "$HDMI_CHECK_SCRIPT"
+        print_success "HDMI detection script installed"
+    else
+        print_warning "check-hdmi.sh not found, TUI will start without HDMI check"
+        HDMI_CHECK_SCRIPT=""
+    fi
+    
+    # Add user to tty group for display access
+    print_info "Adding user to tty group for display access..."
+    sudo usermod -a -G tty ${USER}
+    print_success "User added to tty group (will take effect after logout/reboot)"
     
     # Create systemd service file
     sudo tee "$SERVICE_FILE" > /dev/null << EOF
 [Unit]
 Description=OBLIRIM TUI Display (Textual Interface on HDMI)
-After=oblirim.service
+After=oblirim.service network-online.target
 Requires=oblirim.service
+Wants=network-online.target
 
 [Service]
 Type=simple
 User=${USER}
-Group=${USER}
+Group=tty
 WorkingDirectory=${PROJECT_DIR}
-Environment=PATH=${PROJECT_DIR}/.venv/bin
-Environment=TERM=xterm-256color
+Environment="PATH=${PROJECT_DIR}/.venv/bin:/usr/local/bin:/usr/bin:/bin"
+Environment="VIRTUAL_ENV=${PROJECT_DIR}/.venv"
+Environment="PYTHONPATH=${PROJECT_DIR}"
+Environment="TERM=xterm-256color"
+
 StandardInput=tty
 StandardOutput=tty
-TTY=/dev/tty1
-# Wait for the main server to be ready before starting TUI
-ExecStartPre=/bin/bash -c 'until curl -sf http://localhost:5000 > /dev/null; do sleep 1; done'
+TTYPath=/dev/tty1
+TTYReset=yes
+TTYVHangup=yes
+
+# Check if HDMI display is connected before starting${HDMI_CHECK_SCRIPT:+
+ExecStartPre=$HDMI_CHECK_SCRIPT}
+
+# Disable console blanking
+ExecStartPre=/bin/bash -c 'setterm -blank 0 -powerdown 0 < /dev/tty1 > /dev/tty1 2>/dev/null || true'
+
+# Wait for backend to be ready (with timeout)
+ExecStartPre=/bin/bash -c 'timeout 60 bash -c "until curl -sf http://localhost:5000 > /dev/null 2>&1; do sleep 1; done" || (echo "Backend not ready after 60s" && exit 1)'
+
+# Verify virtual environment exists
+ExecStartPre=/bin/bash -c '[ -d ${PROJECT_DIR}/.venv ] || exit 1'
+
+# Start the TUI
 ExecStart=${PROJECT_DIR}/.venv/bin/python ${PROJECT_DIR}/tui_app.py
+
+# Restart configuration
 Restart=always
 RestartSec=10
+StartLimitBurst=3
+StartLimitIntervalSec=120
 
 [Install]
 WantedBy=multi-user.target
@@ -527,9 +593,12 @@ EOF
     sudo systemctl daemon-reload
     sudo systemctl enable "$SERVICE_NAME"
     
-    print_success "Textual TUI service created: /etc/systemd/system/oblirim-tui.service"
+    print_success "Textual TUI service created: /etc/systemd/system/${SERVICE_NAME}.service"
     print_success "TUI display enabled for auto-start on tty1"
-    print_success "TUI will wait for main server to be ready before starting"
+    print_success "TUI will wait for backend to be ready before starting"
+    if [ -n "$HDMI_CHECK_SCRIPT" ]; then
+        print_success "TUI will only start when HDMI display is connected"
+    fi
     print_info "TUI control commands:"
     print_info "  Start:   sudo systemctl start $SERVICE_NAME"
     print_info "  Stop:    sudo systemctl stop $SERVICE_NAME"
@@ -602,49 +671,15 @@ configure_network() {
     LOCAL_IP=$(hostname -I | awk '{print $1}')
     print_info "Local IP address: $LOCAL_IP"
     
-    # Configure firewall rules to restrict Web UI to Bluetooth PAN only
-    print_info "Configuring firewall rules for Bluetooth PAN access..."
-    
-    # First, block access to port 5000 from all interfaces except localhost and bnep0
-    # This ensures Web UI is only accessible via Bluetooth PAN
-    
-    # Allow localhost access (for TUI)
-    sudo iptables -I INPUT -i lo -p tcp --dport 5000 -j ACCEPT
-    
-    # Allow Bluetooth PAN interface (bnep0) - if/when it exists
-    sudo iptables -I INPUT -i bnep0 -p tcp --dport 5000 -j ACCEPT
-    
-    # Drop all other connections to port 5000
-    sudo iptables -A INPUT -p tcp --dport 5000 -j DROP
-    
-    # Save iptables rules to persist across reboots
-    if command -v netfilter-persistent >/dev/null 2>&1; then
-        sudo netfilter-persistent save
-        print_success "Firewall rules saved with netfilter-persistent"
-    elif [ -f /etc/debian_version ]; then
-        # Debian/Ubuntu/Raspbian - install iptables-persistent
-        print_info "Installing iptables-persistent to save rules..."
-        sudo DEBIAN_FRONTEND=noninteractive apt-get install -y iptables-persistent
-        sudo netfilter-persistent save
-        print_success "Firewall rules saved"
-    else
-        # Fallback - use iptables-save
-        sudo iptables-save | sudo tee /etc/iptables/rules.v4 > /dev/null
-        print_warning "Firewall rules saved, but may need manual restoration after reboot"
-    fi
-    
-    print_success "Firewall configured:"
-    print_info "  ✓ Port 5000 accessible via localhost (for TUI)"
-    print_info "  ✓ Port 5000 accessible via Bluetooth PAN (bnep0)"
-    print_info "  ✗ Port 5000 blocked from Ethernet and WiFi interfaces"
-    
-    # Configure UFW if available (but iptables rules take precedence)
-    if command -v ufw >/dev/null 2>&1; then
-        print_warning "UFW detected - note that iptables rules above take precedence"
-        print_info "Recommend: sudo ufw disable (to avoid conflicts)"
-    fi
-    
-    print_success "Network security configuration completed"
+    print_success "Network configuration completed"
+    print_info "Web UI will be accessible at:"
+    print_info "  Local:    http://localhost:5000"
+    print_info "  Network:  http://$LOCAL_IP:5000"
+    print_info ""
+    print_warning "Note: No firewall rules applied"
+    print_info "If you want to restrict access, configure firewall manually:"
+    print_info "  sudo ufw allow 5000  # Allow from all"
+    print_info "  sudo ufw enable      # Enable firewall"
     echo
 }
 
@@ -696,6 +731,8 @@ EOF
 main() {
     print_banner
     
+    PROJECT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+    
     print_info "Starting OBLIRIM PWN Master installation..."
     print_info "This will install all dependencies and configure the system"
     echo
@@ -720,6 +757,53 @@ main() {
     create_scripts
     configure_network
     final_setup
+    
+    # Verify services are enabled before declaring success
+    print_header "Installation Verification"
+    
+    print_info "Verifying service installation..."
+    ALL_OK=true
+    
+    if systemctl is-enabled oblirim >/dev/null 2>&1; then
+        print_success "Main service (oblirim) enabled for auto-start"
+    else
+        print_error "Main service (oblirim) NOT enabled"
+        ALL_OK=false
+    fi
+    
+    if systemctl is-enabled oblirim-tui >/dev/null 2>&1; then
+        print_success "TUI service (oblirim-tui) enabled for auto-start"
+    else
+        print_error "TUI service (oblirim-tui) NOT enabled"
+        ALL_OK=false
+    fi
+    
+    # Check virtual environment
+    if [ -d "${PROJECT_DIR}/.venv" ]; then
+        print_success "Virtual environment created"
+    else
+        print_error "Virtual environment missing"
+        ALL_OK=false
+    fi
+    
+    # Check critical tools
+    for tool in nmap nikto python3; do
+        if command -v $tool >/dev/null 2>&1; then
+            print_success "$tool installed"
+        else
+            print_warning "$tool not found (some features may not work)"
+        fi
+    done
+    
+    if [ "$ALL_OK" = false ]; then
+        print_error "Installation verification failed!"
+        print_error "Some services are not properly configured"
+        print_warning "Please review the errors above before rebooting"
+        exit 1
+    fi
+    
+    print_success "All critical components verified successfully!"
+    echo ""
     
     # Installation complete
     print_header "Installation Complete!"

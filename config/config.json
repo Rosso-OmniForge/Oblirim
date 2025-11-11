@@ -1,0 +1,16 @@
+{
+    "_comment": "Configuration file for oblirim application - contains screen settings and WLAN device configuration",
+    "screenDetails": {
+        "hdmi": {
+            "resolution": {
+                "width": 1920,
+                "height": 1080
+            },
+            "frameRate": 60
+        }
+    },
+    "wlanDevices": [
+        "wlan0",
+        "wlan1"
+    ]
+}

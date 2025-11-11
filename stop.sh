@@ -1,7 +1,8 @@
 #!/bin/bash
 
-# Stop script for Raspberry Pi Dashboard
-# Stops the running Flask-SocketIO server
+# Stop script for OBLIRIM Backend Server
+# ONLY stops the Flask server (NOT the TUI)
+# For TUI control, use: sudo systemctl stop oblirim-tui
 
 # Color codes for output
 RED='\033[0;31m'
@@ -29,13 +30,20 @@ print_warning() {
     echo -e "${YELLOW}⚠ $1${NC}"
 }
 
+print_info() {
+    echo -e "${BLUE}ℹ $1${NC}"
+}
+
 # Get the directory where this script is located
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PID_FILE="${SCRIPT_DIR}/.dashboard_pid"
 LOG_DIR="${SCRIPT_DIR}/logs"
 LOG_FILE="${LOG_DIR}/dashboard.log"
 
-print_header "Raspberry Pi Dashboard - Stop"
+print_header "OBLIRIM Backend Server - Stop"
+print_info "This script ONLY stops the Flask backend"
+print_info "TUI is controlled separately: sudo systemctl stop oblirim-tui"
+echo ""
 
 # Check if PID file exists
 if [ ! -f "$PID_FILE" ]; then

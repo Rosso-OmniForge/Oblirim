@@ -29,9 +29,10 @@ class SystemStatsWidget(Static):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.border_title = "SYSTEM STATS"
+        self.initial_display = True
     
     def compose(self) -> ComposeResult:
-        yield Static(id="sys-content")
+        yield Static("[dim]Loading system stats...[/dim]", id="sys-content")
     
     def get_pi_model(self):
         """Detect Raspberry Pi model"""
@@ -83,6 +84,8 @@ class SystemStatsWidget(Static):
     def update_stats(self):
         """Update system statistics"""
         try:
+            self.initial_display = False
+            
             # Get IP address
             ip = "N/A"
             try:
@@ -136,7 +139,9 @@ class SystemStatsWidget(Static):
             
         except Exception as e:
             content_widget = self.query_one("#sys-content", Static)
-            content_widget.update(f"[red]Error updating stats: {str(e)}[/red]")
+            error_msg = f"[red]Error updating stats:[/red]\n[dim]{str(e)}[/dim]"
+            content_widget.update(error_msg)
+            print(f"System stats error: {e}", flush=True)
 
 
 class EthernetStatusWidget(Static):
@@ -154,14 +159,17 @@ class EthernetStatusWidget(Static):
             'current': {'hosts': 0, 'ports': 0, 'vulnerabilities': 0},
             'historical': {'hosts': 0, 'ports': 0, 'vulnerabilities': 0, 'scans': 0}
         }
+        self.initial_display = True
     
     def compose(self) -> ComposeResult:
-        yield Static(id="eth-content")
+        yield Static("[dim]Checking Ethernet connection...[/dim]", id="eth-content")
         yield ProgressBar(total=100, show_eta=False, id="eth-progress")
     
     def update_status(self):
         """Update Ethernet status and metrics"""
         try:
+            self.initial_display = False
+            
             # Get Ethernet state
             eth_state = eth_detector.get_eth0_state()
             
@@ -225,7 +233,9 @@ class EthernetStatusWidget(Static):
             
         except Exception as e:
             content_widget = self.query_one("#eth-content", Static)
-            content_widget.update(f"[red]Error: {str(e)}[/red]")
+            error_msg = f"[red]Error updating Ethernet status:[/red]\n[dim]{str(e)}[/dim]"
+            content_widget.update(error_msg)
+            print(f"Ethernet status error: {e}", flush=True)
     
     def update_scan_progress(self, phase: str, progress: int, message: str = ""):
         """Update scan progress"""
@@ -240,22 +250,29 @@ class LogViewerWidget(ScrollableContainer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.border_title = "ETHERNET LOGS"
+        self.initial_display = True
     
     def compose(self) -> ComposeResult:
-        yield Static(id="log-content")
+        yield Static("[dim]Loading logs...[/dim]", id="log-content")
     
     def update_logs(self):
         """Update log display"""
         try:
+            self.initial_display = False
             from components.tab_logger import tab_logger
             logs = tab_logger.get_recent_logs('eth', 50)
             
             if logs:
                 log_widget = self.query_one("#log-content", Static)
                 log_widget.update(logs)
+            else:
+                log_widget = self.query_one("#log-content", Static)
+                log_widget.update("[dim]No logs available yet.\nLogs will appear when Ethernet activity is detected.[/dim]")
         except Exception as e:
             log_widget = self.query_one("#log-content", Static)
-            log_widget.update(f"[red]Error loading logs: {str(e)}[/red]")
+            error_msg = f"[yellow]Unable to load logs:[/yellow]\n[dim]{str(e)}[/dim]"
+            log_widget.update(error_msg)
+            print(f"Log loading error: {e}", flush=True)
 
 
 class OblirimTUI(App):
@@ -327,6 +344,7 @@ class OblirimTUI(App):
     
     BINDINGS = [
         ("q", "quit", "Quit"),
+        ("ctrl+c", "quit", "Exit"),
         ("r", "refresh", "Refresh"),
         ("s", "scan", "Start Scan"),
     ]
@@ -344,6 +362,10 @@ class OblirimTUI(App):
     
     def on_mount(self) -> None:
         """When app is mounted, start update loops"""
+        # Immediately update display on mount so data shows right away
+        self.call_later(self.initial_update)
+        
+        # Set up periodic timers
         self.update_timer = self.set_interval(2.0, self.update_display)
         self.log_timer = self.set_interval(5.0, self.update_logs)
         
@@ -358,15 +380,23 @@ class OblirimTUI(App):
         
         def handle_workflow_progress(progress_data):
             """Handle workflow progress updates"""
-            eth_widget = self.query_one(EthernetStatusWidget)
-            phase = progress_data.get('phase', 'Unknown')
-            progress = progress_data.get('progress', 0)
-            message = progress_data.get('message', '')
-            eth_widget.update_scan_progress(phase, progress, message)
+            try:
+                eth_widget = self.query_one(EthernetStatusWidget)
+                phase = progress_data.get('phase', 'Unknown')
+                progress = progress_data.get('progress', 0)
+                message = progress_data.get('message', '')
+                eth_widget.update_scan_progress(phase, progress, message)
+            except Exception as e:
+                print(f"Error in progress callback: {e}")
         
         eth_workflow.add_progress_callback(handle_workflow_progress)
         eth_detector.workflow_callback = handle_eth_workflow
         eth_detector.start()
+    
+    def initial_update(self) -> None:
+        """Initial update to show data immediately on startup"""
+        self.update_display()
+        self.update_logs()
     
     @work(exclusive=True)
     async def run_workflow_async(self, network_info):
@@ -382,7 +412,8 @@ class OblirimTUI(App):
             eth_widget = self.query_one(EthernetStatusWidget)
             eth_widget.update_status()
         except Exception as e:
-            pass  # Ignore errors during updates
+            # Log errors to help with debugging
+            print(f"Error updating display: {e}", flush=True)
     
     def update_logs(self) -> None:
         """Update log display"""
@@ -390,7 +421,8 @@ class OblirimTUI(App):
             log_widget = self.query_one(LogViewerWidget)
             log_widget.update_logs()
         except Exception as e:
-            pass  # Ignore errors during log updates
+            # Log errors to help with debugging
+            print(f"Error updating logs: {e}", flush=True)
     
     def action_refresh(self) -> None:
         """Manually refresh all data"""
@@ -405,6 +437,15 @@ class OblirimTUI(App):
                 self.run_worker(self.run_workflow_async(network_info))
         except Exception as e:
             pass
+    
+    def on_unmount(self) -> None:
+        """Cleanup when app is unmounted"""
+        try:
+            # Stop the Ethernet detector
+            eth_detector.stop()
+            print("OBLIRIM TUI exited cleanly", flush=True)
+        except Exception as e:
+            print(f"Error during cleanup: {e}", flush=True)
 
 
 def main():

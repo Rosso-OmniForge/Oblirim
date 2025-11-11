@@ -1,7 +1,8 @@
 #!/bin/bash
 
-# Launch script for Raspberry Pi Dashboard
-# Starts the Flask-SocketIO server headlessly
+# Launch script for OBLIRIM Backend Server
+# ONLY starts the Flask-SocketIO server (NOT the TUI)
+# For TUI control, use: sudo systemctl start/stop oblirim-tui
 
 # Color codes for output
 RED='\033[0;31m'
@@ -37,7 +38,13 @@ LOG_DIR="${SCRIPT_DIR}/logs"
 LOG_FILE="${LOG_DIR}/dashboard.log"
 PID_FILE="${SCRIPT_DIR}/.dashboard_pid"
 
-print_header "Raspberry Pi Dashboard - Launcher"
+print_header "OBLIRIM Backend Server - Launcher"
+print_info() {
+    echo -e "${BLUE}ℹ $1${NC}"
+}
+print_info "This script ONLY controls the Flask backend server"
+print_info "TUI is controlled separately via systemd: sudo systemctl start oblirim-tui"
+echo ""
 
 # Check if virtual environment exists
 if [ ! -d "$VENV_PATH" ]; then
